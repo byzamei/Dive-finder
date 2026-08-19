@@ -22,6 +22,7 @@ import {
   CERTIFICATION_AGENCIES,
   CERTIFICATIONS_BY_AGENCY,
   DEMO_DESTINATIONS,
+  MASKS,
 } from "./data";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -89,6 +90,51 @@ async function main() {
     }))
   );
   await upsert("certifications", certRows, "agency_id,name");
+
+  console.log("\nMasks (Gear / Mask Finder — see docs/gear-mask-finder.md)");
+  const [gearSource] = await upsert(
+    "data_sources",
+    [
+      {
+        name: "Public dive-gear buying guides (aggregated)",
+        source_type: "editorial",
+        url: "https://www.divein.com/articles/buyers-guide-scuba-masks/",
+        reliability: "medium",
+        notes:
+          "General face-shape fit guidance aggregated from public scuba mask buying guides. Not manufacturer lab-measured fit data — always try a mask before buying.",
+      },
+    ],
+    "name"
+  );
+  const maskRows = MASKS.map((m) => ({
+    slug: m.slug,
+    name: m.name,
+    brand: m.brand,
+    lens_type: m.lens_type,
+    volume_category: m.volume_category,
+    fit_face_width: m.fit_face_width,
+    fit_nose_bridge: m.fit_nose_bridge,
+    notes: m.notes,
+    status: "published" as const,
+    demo_data: false,
+  }));
+  const masks = await upsert("masks", maskRows, "slug");
+  const claimRows = masks.map((m) => ({
+    entity_type: "mask",
+    entity_id: m.id,
+    field_name: "fit_guidance",
+    value_json: (m as unknown as { notes: string }).notes,
+    source_id: gearSource?.id,
+    source_type: "editorial",
+    observed_at: new Date().toISOString(),
+    verified_at: new Date().toISOString(),
+    confidence: "low" as const,
+    review_status: "verified" as const,
+  }));
+  if (claimRows.length && gearSource) {
+    await db.from("data_claims").delete().eq("field_name", "fit_guidance").eq("entity_type", "mask");
+    await db.from("data_claims").insert(claimRows);
+  }
 
   console.log("\nDEMO destinations (fully fabricated, demo_data=true, isolated from real data)");
   const demoDestRows = DEMO_DESTINATIONS.map((d) => ({

@@ -122,6 +122,74 @@ export const CERTIFICATIONS_BY_AGENCY: Record<string, { name: string; level_rank
   ],
 };
 
+export interface SeedMask {
+  slug: string;
+  name: string;
+  brand: string;
+  lens_type: "single" | "dual" | "frameless";
+  volume_category: "low" | "medium" | "high";
+  fit_face_width: ("narrow" | "medium" | "wide")[];
+  fit_nose_bridge: ("narrow" | "medium" | "wide")[];
+  notes: string;
+}
+
+// Sourcing note: lens type / volume category are published product-design
+// facts. Face-width / nose-bridge guidance reflects general consensus
+// across public dive-gear buying guides — not manufacturer lab fit data.
+// See docs/gear-mask-finder.md.
+export const MASKS: SeedMask[] = [
+  {
+    slug: "cressi-f1",
+    name: "F1",
+    brand: "Cressi",
+    lens_type: "frameless",
+    volume_category: "low",
+    fit_face_width: ["narrow", "medium"],
+    fit_nose_bridge: ["narrow", "medium"],
+    notes: "Frameless low-volume design commonly recommended for narrow-to-medium, smaller faces.",
+  },
+  {
+    slug: "mares-x-vision-ultra-liquidskin",
+    name: "X-Vision Ultra Liquidskin",
+    brand: "Mares",
+    lens_type: "dual",
+    volume_category: "low",
+    fit_face_width: ["narrow", "medium"],
+    fit_nose_bridge: ["narrow", "medium"],
+    notes: "Low-volume dual-lens mask, liquid-silicone skirt, often cited as a good fit for narrower faces.",
+  },
+  {
+    slug: "atomic-venom-frameless",
+    name: "Venom Frameless",
+    brand: "Atomic Aquatics",
+    lens_type: "frameless",
+    volume_category: "low",
+    fit_face_width: ["narrow", "medium"],
+    fit_nose_bridge: ["narrow"],
+    notes: "Frameless single-lens design with a wide field of view, generally suited to narrower face widths.",
+  },
+  {
+    slug: "scubapro-synergy-twin",
+    name: "Synergy Twin",
+    brand: "Scubapro",
+    lens_type: "dual",
+    volume_category: "medium",
+    fit_face_width: ["medium", "wide"],
+    fit_nose_bridge: ["medium", "wide"],
+    notes: "Dual-lens medium-volume mask commonly cited as fitting a broad range of face widths, including wider faces.",
+  },
+  {
+    slug: "tusa-freedom-hd",
+    name: "Freedom HD (Ceos)",
+    brand: "TUSA",
+    lens_type: "dual",
+    volume_category: "medium",
+    fit_face_width: ["narrow", "medium", "wide"],
+    fit_nose_bridge: ["narrow", "medium", "wide"],
+    notes: "Dual-lens mask frequently recommended across a wide range of face shapes and sizes, including smaller/rounder faces.",
+  },
+];
+
 // ── DEMO ONLY below this line — clearly synthetic, never mixed with real
 // destinations in default search results. ─────────────────────────────────
 

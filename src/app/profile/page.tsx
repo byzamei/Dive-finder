@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/session";
 import { DiverProfileForm } from "@/components/profile/DiverProfileForm";
@@ -20,6 +21,14 @@ export default async function ProfilePage() {
       <p className="mt-2 text-abyss-500">
         Used to personalize search results — safety filters and match scoring. Never shared publicly.
       </p>
+
+      <Link
+        href="/gear/mask-finder"
+        className="focus-ring mt-6 block rounded-xl2 border border-abyss-100 bg-sand-100 p-4 text-sm hover:bg-sand-200"
+      >
+        <p className="font-medium text-abyss-800">Find your mask fit →</p>
+        <p className="mt-0.5 text-abyss-500">An on-device face scan to suggest mask shapes that suit your face.</p>
+      </Link>
 
       <div className="mt-8">
         <DiverProfileForm

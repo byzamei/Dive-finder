@@ -9,6 +9,7 @@ const items = [
   { href: "/wildlife", label: "Wildlife" },
   { href: "/map", label: "Map" },
   { href: "/compare", label: "Compare" },
+  { href: "/gear/mask-finder", label: "Mask Finder" },
   { href: "/saved", label: "Saved" },
 ];
 

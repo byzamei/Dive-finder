@@ -81,6 +81,12 @@ its natural key.
 same SQL Editor and run it after the migrations — it's a plain-SQL mirror
 of the exact same seed data, also safe to re-run.
 
+**Mask Finder catalog:** if your project already existed before the Gear
+feature was added, also run `supabase/migrations/0010_gear.sql` (already
+included in a regenerated `supabase/all_migrations.sql`) and
+`supabase/seed/gear_seed.sql` to add the `masks` table and its starter
+catalog — see `docs/gear-mask-finder.md`.
+
 ## 7. Create an admin user
 
 1. Run the app (`npm run dev`) and sign up once via `/login` (magic link —
@@ -180,10 +186,16 @@ with a separate data-completeness score, results/compare/map/favorites,
 full data-governance model (sources, claims, conflicts, TTL, review queue),
 admin back-office, Data Health dashboard, PWA installability.
 
-**Deliberately out of scope for V1** (per the product brief): booking/
-payments, a full marketplace, social features/messaging, a complete dive
-log/carnet, a working Gear Finder, face/mask recognition, live flight
-pricing.
+**Added post-V1 (by request):** Mask Finder — an on-device (privacy-first,
+nothing uploaded) camera face-scan that suggests dive mask shapes suited
+to your face, using the same qualitative/sourced-data approach as the
+rest of the app. See `docs/gear-mask-finder.md`.
+
+**Deliberately out of scope:** booking/payments, a full marketplace,
+social features/messaging, a complete dive log/carnet, live flight
+pricing, real-time liveaboard/dive-center availability (needs real
+operator data or booking-platform integrations — not yet sourced, see
+`docs/data-governance.md`).
 
 ## Honesty about seed data
 

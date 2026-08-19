@@ -277,6 +277,12 @@ export interface DiverProfile {
   preferred_water_temp_min_c: number | null;
   preferred_water_temp_max_c: number | null;
   preferred_dive_types: DiveTypeTag[];
+  // Qualitative categories only — never raw measurements or coordinates.
+  // Saved only if the user opts in from the Mask Finder. See
+  // docs/gear-mask-finder.md.
+  mask_face_width: FaceWidthCategory | null;
+  mask_nose_bridge: NoseBridgeCategory | null;
+  mask_face_shape: FaceShapeCategory | null;
 }
 
 export interface Favorite {
@@ -351,4 +357,43 @@ export interface ScoredDestination {
   hardFilterWarnings: string[]; // non-blocking safety notes ("check operator requirements")
   dataConfidence: Confidence;
   lastUpdated: ISODateString | null;
+}
+
+// ── Gear / Mask Finder domain ───────────────────────────────────────────
+// See docs/gear-mask-finder.md. All face-derived values are qualitative
+// categories only, computed entirely on-device — never coordinates, never
+// an image, never sent to or stored on a server unless the user explicitly
+// opts to save the category labels to their diver profile.
+
+export type FaceWidthCategory = "narrow" | "medium" | "wide";
+export type NoseBridgeCategory = "narrow" | "medium" | "wide";
+export type FaceShapeCategory = "long" | "oval" | "round";
+export type MaskLensType = "single" | "dual" | "frameless";
+export type MaskVolumeCategory = "low" | "medium" | "high";
+
+export interface FaceProfile {
+  faceWidth: FaceWidthCategory;
+  noseBridge: NoseBridgeCategory;
+  faceShape: FaceShapeCategory;
+}
+
+export interface Mask {
+  id: UUID;
+  slug: string;
+  name: string;
+  brand: string;
+  lens_type: MaskLensType;
+  volume_category: MaskVolumeCategory;
+  fit_face_width: FaceWidthCategory[];
+  fit_nose_bridge: NoseBridgeCategory[];
+  notes: string | null;
+  image_url: string | null;
+  demo_data: boolean;
+  status: "draft" | "published";
+}
+
+export interface MaskMatch {
+  mask: Mask;
+  suitability: Suitability;
+  reasons: string[];
 }
