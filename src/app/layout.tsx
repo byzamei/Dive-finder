@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { TopNav } from "@/components/nav/TopNav";
+import { MobileHeader } from "@/components/nav/MobileHeader";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <TopNav />
+        <MobileHeader />
         <div className="pb-20 md:pb-0" style={{ paddingBottom: "calc(5rem + var(--safe-area-bottom))" }}>
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
