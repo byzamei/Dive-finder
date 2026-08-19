@@ -49,6 +49,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-6">
+        <Link
+          href="/gear/mask-finder"
+          className="focus-ring flex items-center justify-between gap-4 rounded-xl2 border border-abyss-100 bg-white p-5 shadow-card transition-transform hover:-translate-y-0.5"
+        >
+          <div>
+            <h2 className="font-display text-lg text-abyss-900">Mask Finder</h2>
+            <p className="mt-1 text-sm text-abyss-500">
+              An on-device face scan to find a mask shape that suits you — nothing ever leaves your phone.
+            </p>
+          </div>
+          <span aria-hidden className="shrink-0 text-2xl text-ocean-600">
+            →
+          </span>
+        </Link>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="rounded-xl2 border border-abyss-100 bg-sand-100 p-6 sm:p-8">
           <h2 className="font-display text-xl text-abyss-900">Explainable, not hype-driven</h2>
