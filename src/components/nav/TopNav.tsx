@@ -7,6 +7,7 @@ import { LogoMark } from "@/components/LogoMark";
 
 const items = [
   { href: "/discover", label: "Discover" },
+  { href: "/sites", label: "Sites" },
   { href: "/wildlife", label: "Wildlife" },
   { href: "/map", label: "Map" },
   { href: "/compare", label: "Compare" },

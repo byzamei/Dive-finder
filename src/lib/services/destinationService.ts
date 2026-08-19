@@ -31,6 +31,27 @@ export async function getDiveSitesForDestination(supabase: SupabaseClient, desti
   return (data ?? []) as DiveSite[];
 }
 
+export interface DiveSiteWithDestination extends DiveSite {
+  destination_name: string;
+  destination_slug: string;
+}
+
+export async function listPublishedSites(supabase: SupabaseClient): Promise<DiveSiteWithDestination[]> {
+  const { data, error } = await supabase
+    .from("dive_sites")
+    .select("*, destinations(name, slug)")
+    .eq("status", "published")
+    .order("name");
+  if (error) throw error;
+  return ((data ?? []) as unknown as (DiveSite & { destinations: { name: string; slug: string } | null })[]).map(
+    (row) => ({
+      ...row,
+      destination_name: row.destinations?.name ?? "Unknown destination",
+      destination_slug: row.destinations?.slug ?? "",
+    })
+  );
+}
+
 export async function getDiveSiteBySlug(supabase: SupabaseClient, slug: string): Promise<DiveSite | null> {
   const { data, error } = await supabase.from("dive_sites").select("*").eq("slug", slug).maybeSingle();
   if (error) throw error;
