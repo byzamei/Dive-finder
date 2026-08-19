@@ -54,9 +54,12 @@ This runs every file in `supabase/migrations/` in order — schema, RLS
 policies, and the Data Health views. Migrations are idempotent
 (`create table if not exists`, `create or replace`) so re-running is safe.
 
-If you'd rather not install the Supabase CLI, paste each file in
-`supabase/migrations/` (in numeric order) into the SQL editor in the
-Supabase dashboard and run them one by one.
+If you'd rather not install the Supabase CLI (or can't reach your project
+from the CLI's network), paste `supabase/all_migrations.sql` — every
+migration file combined, in order — into **SQL Editor** in the Supabase
+dashboard and click **Run** once. It's regenerated from
+`supabase/migrations/0001..0009` and is safe to re-run (every statement is
+`create ... if not exists` / `create or replace`).
 
 ## 6. Seed the database
 
@@ -73,6 +76,10 @@ species, certification agencies/certifications, and 3 isolated
 seasonality, pricing, an expired claim, etc.) without it ever being
 mistaken for a real observation. Safe to re-run — every insert upserts on
 its natural key.
+
+**No terminal / can't run npm?** Paste `supabase/seed/seed.sql` into the
+same SQL Editor and run it after the migrations — it's a plain-SQL mirror
+of the exact same seed data, also safe to re-run.
 
 ## 7. Create an admin user
 
