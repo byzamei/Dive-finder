@@ -47,10 +47,12 @@ export function ProfileHeader({
   return (
     <div className="overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card">
       <div className="h-16 bg-gradient-to-r from-ocean-600 to-seaglass-500 sm:h-20" />
-      <div className="-mt-10 flex flex-col gap-4 px-5 pb-5 sm:-mt-12 sm:flex-row sm:items-end sm:px-6 sm:pb-6">
-        <AvatarUpload userId={userId} displayName={profile.display_name} avatarUrl={avatarUrl} onUploaded={setAvatarUrl} />
+      <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-end sm:px-6 sm:pb-6">
+        <div className="-mt-10 shrink-0 sm:-mt-12">
+          <AvatarUpload userId={userId} displayName={profile.display_name} avatarUrl={avatarUrl} onUploaded={setAvatarUrl} />
+        </div>
 
-        <div className="flex-1">
+        <div className="flex-1 pt-1">
           {editing ? (
             <div className="space-y-2">
               <input
