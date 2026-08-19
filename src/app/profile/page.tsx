@@ -24,10 +24,15 @@ export default async function ProfilePage() {
 
       <Link
         href="/gear/mask-finder"
-        className="focus-ring mt-6 block rounded-xl2 border border-abyss-100 bg-sand-100 p-4 text-sm hover:bg-sand-200"
+        className="focus-ring group mt-6 flex items-center justify-between gap-4 rounded-xl2 border border-abyss-100 bg-gradient-to-r from-ocean-50 to-sand-100 p-4 transition-transform hover:-translate-y-0.5"
       >
-        <p className="font-medium text-abyss-800">Find your mask fit →</p>
-        <p className="mt-0.5 text-abyss-500">An on-device face scan to suggest mask shapes that suit your face.</p>
+        <div>
+          <p className="font-medium text-abyss-800">Find your mask fit</p>
+          <p className="mt-0.5 text-sm text-abyss-500">An on-device face scan to suggest mask shapes that suit your face.</p>
+        </div>
+        <span aria-hidden className="shrink-0 text-2xl text-ocean-600 transition-transform group-hover:translate-x-0.5">
+          →
+        </span>
       </Link>
 
       <div className="mt-8">
