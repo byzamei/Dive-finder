@@ -21,7 +21,7 @@ export default function LandingPage() {
             <ButtonLink href="/discover" size="lg" variant="primary">
               Find my dive destination
             </ButtonLink>
-            <ButtonLink href="/wildlife" size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10">
+            <ButtonLink href="/wildlife" size="lg" variant="outlineInverse">
               Browse by animal
             </ButtonLink>
           </div>

@@ -9,6 +9,11 @@ const variants = {
   primary: "bg-ocean-600 text-white hover:bg-ocean-700 active:bg-ocean-800",
   secondary: "bg-abyss-900 text-white hover:bg-abyss-800",
   outline: "border border-abyss-200 text-abyss-800 hover:bg-abyss-50 bg-white",
+  // For use on dark backgrounds (e.g. the hero) — a separate variant instead
+  // of overriding `outline`'s classes via className, since plain string
+  // concatenation in cn() can't reliably override conflicting utilities
+  // like bg-white / text-abyss-800.
+  outlineInverse: "border border-white/30 text-white bg-transparent hover:bg-white/10",
   ghost: "text-abyss-700 hover:bg-abyss-100",
   coral: "bg-coral-500 text-white hover:bg-coral-600",
 };
