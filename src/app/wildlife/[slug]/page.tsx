@@ -1,0 +1,89 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getDestinationsForSpecies, getSeasonalityForSpecies, getSpeciesBySlug } from "@/lib/services/wildlifeService";
+import { SuitabilityBadge } from "@/components/badges/DataBadges";
+import { DemoDataBadge } from "@/components/badges/DataBadges";
+import { monthName } from "@/lib/utils/format";
+import { ButtonLink } from "@/components/ui/Button";
+import { encodeCriteria } from "@/lib/utils/searchParams";
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const supabase = await createClient();
+  const species = await getSpeciesBySlug(supabase, params.slug);
+  if (!species) return {};
+  return { title: species.common_name, description: `Where to see ${species.common_name} (${species.scientific_name}).` };
+}
+
+export default async function SpeciesPage({ params }: { params: { slug: string } }) {
+  const supabase = await createClient();
+  const species = await getSpeciesBySlug(supabase, params.slug);
+  if (!species) notFound();
+
+  const [destinations, seasonality] = await Promise.all([
+    getDestinationsForSpecies(supabase, species.id),
+    getSeasonalityForSpecies(supabase, species.id),
+  ]);
+
+  return (
+    <main className="mx-auto max-w-3xl px-6 py-10">
+      <h1 className="font-display text-3xl text-abyss-900">{species.common_name}</h1>
+      <p className="mt-1 italic text-abyss-400">{species.scientific_name}</p>
+
+      <ButtonLink
+        href={`/results?c=${encodeCriteria({ speciesIds: [species.id] })}`}
+        variant="outline"
+        size="sm"
+        className="mt-4"
+      >
+        Find destinations for this species
+      </ButtonLink>
+
+      <section className="mt-8">
+        <h2 className="font-display text-xl text-abyss-900">Destinations reporting this species</h2>
+        {destinations.length > 0 ? (
+          <ul className="mt-3 space-y-2">
+            {destinations.map((d) => (
+              <li key={d.id}>
+                <Link
+                  href={`/destinations/${d.slug}`}
+                  className="focus-ring flex items-center justify-between rounded-lg border border-abyss-100 px-4 py-3 text-sm hover:bg-abyss-50"
+                >
+                  <span className="font-medium text-abyss-900">{d.name}</span>
+                  {d.demo_data && <DemoDataBadge />}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm italic text-abyss-400">
+            No destination in DiveFinder has a verified association with this species yet.
+          </p>
+        )}
+      </section>
+
+      {seasonality.length > 0 && (
+        <section className="mt-8">
+          <h2 className="font-display text-xl text-abyss-900">Qualitative seasonal calendar</h2>
+          <p className="mt-1 text-xs text-abyss-400">
+            Suitability is a qualitative rating, never a sighting probability — see docs/scoring.md.
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+              const row = seasonality.find((s) => s.month === month);
+              return (
+                <div key={month} className="rounded-lg border border-abyss-100 p-3 text-center">
+                  <p className="text-xs text-abyss-400">{monthName(month)}</p>
+                  <div className="mt-1">
+                    <SuitabilityBadge suitability={row?.suitability ?? "unknown"} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}

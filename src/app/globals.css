@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────────────────
+   See docs/design-system.md. Direction: abyssal / editorial / cartographic
+   marine science — not a turquoise-and-cartoon-fish travel cliché.
+   Fonts use system stacks (no external font fetch) so the app builds
+   offline; swap in real webfonts via next/font later if desired. */
+:root {
+  --font-display: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-sand-50 text-abyss-900 antialiased;
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+/* Larger touch targets on mobile per PWA guidelines */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.skeleton {
+  @apply animate-pulse bg-abyss-100 rounded-lg;
+}
+
+.focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50;
+}
