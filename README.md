@@ -58,7 +58,7 @@ If you'd rather not install the Supabase CLI (or can't reach your project
 from the CLI's network), paste `supabase/all_migrations.sql` — every
 migration file combined, in order — into **SQL Editor** in the Supabase
 dashboard and click **Run** once. It's regenerated from
-`supabase/migrations/0001..0009` and is safe to re-run (every statement is
+`supabase/migrations/0001..0011` and is safe to re-run (every statement is
 `create ... if not exists` / `create or replace`).
 
 ## 6. Seed the database
@@ -86,6 +86,15 @@ feature was added, also run `supabase/migrations/0010_gear.sql` (already
 included in a regenerated `supabase/all_migrations.sql`) and
 `supabase/seed/gear_seed.sql` to add the `masks` table and its starter
 catalog — see `docs/gear-mask-finder.md`.
+
+**Richer profile (avatar, saved lists, species life list):** if your
+project already existed before this was added, also run
+`supabase/migrations/0011_profile_v2.sql` (already included in a
+regenerated `supabase/all_migrations.sql`). It adds `profiles.bio` /
+`profiles.home_base`, a public `avatars` Storage bucket (created via SQL —
+no manual dashboard steps needed), the `saved_lists` table, and the
+`user_species_seen` table (a personal "species I've seen" checklist,
+distinct from the sourced/editorial `species_sightings` table).
 
 ## 7. Create an admin user
 
@@ -190,6 +199,13 @@ admin back-office, Data Health dashboard, PWA installability.
 nothing uploaded) camera face-scan that suggests dive mask shapes suited
 to your face, using the same qualitative/sourced-data approach as the
 rest of the app. See `docs/gear-mask-finder.md`.
+
+**Added post-V1 (by request):** a richer diver profile — editable avatar
+(Supabase Storage), bio/home base, a deterministic badge engine
+(`src/lib/profile/badges.ts`, same "explicit rule, no hidden threshold"
+philosophy as the scoring engine), named saved lists instead of one flat
+favorites pile, and a personal marine-species "life list" with a seen/all
+filter on the Wildlife pages.
 
 **Deliberately out of scope:** booking/payments, a full marketplace,
 social features/messaging, a complete dive log/carnet, live flight

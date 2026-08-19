@@ -13,11 +13,13 @@ export async function addFavorite(
   supabase: SupabaseClient,
   userId: string,
   entityType: Favorite["entity_type"],
-  entityId: string
+  entityId: string,
+  listId?: string | null
 ): Promise<void> {
-  const { error } = await supabase
-    .from("favorites")
-    .upsert({ user_id: userId, entity_type: entityType, entity_id: entityId }, { onConflict: "user_id,entity_type,entity_id" });
+  const { error } = await supabase.from("favorites").upsert(
+    { user_id: userId, entity_type: entityType, entity_id: entityId, list_id: listId ?? null },
+    { onConflict: "user_id,entity_type,entity_id" }
+  );
   if (error) throw error;
 }
 

@@ -8,6 +8,7 @@ import { DemoDataBadge } from "@/components/badges/DataBadges";
 import { monthName } from "@/lib/utils/format";
 import { ButtonLink } from "@/components/ui/Button";
 import { encodeCriteria } from "@/lib/utils/searchParams";
+import { SpeciesSeenToggle } from "@/components/wildlife/SpeciesSeenToggle";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = await createClient();
@@ -21,9 +22,16 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
   const species = await getSpeciesBySlug(supabase, params.slug);
   if (!species) notFound();
 
-  const [destinations, seasonality] = await Promise.all([
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [destinations, seasonality, seenRow] = await Promise.all([
     getDestinationsForSpecies(supabase, species.id),
     getSeasonalityForSpecies(supabase, species.id),
+    user
+      ? supabase.from("user_species_seen").select("id").eq("user_id", user.id).eq("species_id", species.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   return (
@@ -31,14 +39,12 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
       <h1 className="font-display text-3xl text-abyss-900">{species.common_name}</h1>
       <p className="mt-1 italic text-abyss-400">{species.scientific_name}</p>
 
-      <ButtonLink
-        href={`/results?c=${encodeCriteria({ speciesIds: [species.id] })}`}
-        variant="outline"
-        size="sm"
-        className="mt-4"
-      >
-        Find destinations for this species
-      </ButtonLink>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <ButtonLink href={`/results?c=${encodeCriteria({ speciesIds: [species.id] })}`} variant="outline" size="sm">
+          Find destinations for this species
+        </ButtonLink>
+        <SpeciesSeenToggle userId={user?.id ?? null} speciesId={species.id} initialSeen={Boolean(seenRow.data)} />
+      </div>
 
       <section className="mt-8">
         <h2 className="font-display text-xl text-abyss-900">Destinations reporting this species</h2>

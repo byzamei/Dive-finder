@@ -253,7 +253,10 @@ export interface Profile {
   email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
+  home_base: string | null;
   role: "user" | "admin";
+  created_at: ISODateString;
 }
 
 export type NumberOfDivesBucket = "0-9" | "10-24" | "25-49" | "50-99" | "100-249" | "250+";
@@ -290,7 +293,33 @@ export interface Favorite {
   user_id: UUID;
   entity_type: "destination" | "site";
   entity_id: UUID;
+  list_id: UUID | null;
   created_at: ISODateString;
+}
+
+export interface SavedList {
+  id: UUID;
+  user_id: UUID;
+  name: string;
+  created_at: ISODateString;
+}
+
+export interface UserSpeciesSeen {
+  id: UUID;
+  user_id: UUID;
+  species_id: UUID;
+  seen_on: ISODateString | null;
+  note: string | null;
+  created_at: ISODateString;
+}
+
+// ── Badges ──────────────────────────────────────────────────────────────
+// Computed deterministically from profile data — never stored, never
+// awarded by an opaque process. See src/lib/profile/badges.ts.
+export interface EarnedBadge {
+  id: string;
+  label: string;
+  description: string;
 }
 
 export interface Review {
