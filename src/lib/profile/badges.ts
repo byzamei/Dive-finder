@@ -9,6 +9,7 @@ export interface BadgeInputs {
   diverProfile: Partial<DiverProfile> | null;
   savedCount: number;
   speciesSeenCount: number;
+  divesLoggedCount: number;
 }
 
 const DIVE_COUNT_RANK: Record<string, number> = {
@@ -20,7 +21,7 @@ const DIVE_COUNT_RANK: Record<string, number> = {
   "250+": 5,
 };
 
-export function computeBadges({ diverProfile, savedCount, speciesSeenCount }: BadgeInputs): EarnedBadge[] {
+export function computeBadges({ diverProfile, savedCount, speciesSeenCount, divesLoggedCount }: BadgeInputs): EarnedBadge[] {
   const badges: EarnedBadge[] = [];
   const p = diverProfile;
 
@@ -71,6 +72,13 @@ export function computeBadges({ diverProfile, savedCount, speciesSeenCount }: Ba
   }
   if (speciesSeenCount >= 25) {
     badges.push({ id: "life_lister", label: "Life lister", description: "25+ species personally seen" });
+  }
+
+  if (divesLoggedCount >= 1) {
+    badges.push({ id: "logbook_started", label: "Logbook started", description: "Logged a first dive in DiveFinder" });
+  }
+  if (divesLoggedCount >= 25) {
+    badges.push({ id: "dedicated_logger", label: "Dedicated logger", description: "25+ dives logged in DiveFinder" });
   }
 
   return badges;

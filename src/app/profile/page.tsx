@@ -17,6 +17,7 @@ export default async function ProfilePage() {
     { data: species },
     { count: savedCount },
     { count: speciesSeenCount },
+    { count: divesLoggedCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("diver_profiles").select("*").eq("user_id", user.id).maybeSingle(),
@@ -25,6 +26,7 @@ export default async function ProfilePage() {
     supabase.from("marine_species").select("*").order("common_name"),
     supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("user_species_seen").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase.from("dive_log_entries").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
 
   return (
@@ -36,8 +38,22 @@ export default async function ProfilePage() {
           diverProfile={diverProfile as DiverProfile | null}
           savedCount={savedCount ?? 0}
           speciesSeenCount={speciesSeenCount ?? 0}
+          divesLoggedCount={divesLoggedCount ?? 0}
         />
       )}
+
+      <Link
+        href="/logbook"
+        className="focus-ring group mt-6 flex items-center justify-between gap-4 rounded-xl2 border border-abyss-100 bg-gradient-to-r from-seaglass-50 to-ocean-50 p-4 transition-transform hover:-translate-y-0.5"
+      >
+        <div>
+          <p className="font-medium text-abyss-800">Your logbook</p>
+          <p className="mt-0.5 text-sm text-abyss-500">Log dives, depths and conditions — species you log are added to your life list.</p>
+        </div>
+        <span aria-hidden className="shrink-0 text-2xl text-ocean-600 transition-transform group-hover:translate-x-0.5">
+          →
+        </span>
+      </Link>
 
       <Link
         href="/gear/mask-finder"

@@ -96,6 +96,11 @@ no manual dashboard steps needed), the `saved_lists` table, and the
 `user_species_seen` table (a personal "species I've seen" checklist,
 distinct from the sourced/editorial `species_sightings` table).
 
+**Logbook:** if your project already existed before this was added, also
+run `supabase/migrations/0012_dive_log.sql` (already included in a
+regenerated `supabase/all_migrations.sql`) to add the `dive_log_entries`
+table — see `docs/dive-log.md`.
+
 ## 7. Create an admin user
 
 1. Run the app (`npm run dev`) and sign up once via `/login` (magic link —
@@ -211,6 +216,16 @@ filter on the Wildlife pages.
 modeled in V1 but its submission UI stayed off behind a feature flag until
 moderation tooling existed; both are now built (`src/components/reviews/*`,
 `/admin/reviews`) and the flag is on. See `docs/reviews.md`.
+
+**Added post-V1 (by request):** a dedicated `/sites` directory (browse
+every published dive site directly, filtered by destination or access
+type — previously only reachable through a destination page).
+
+**Added post-V1 (by request):** a personal logbook (`/logbook`) — date,
+site (catalog or free text), depth, duration, conditions, buddy, gas,
+species observed (which also feed the species life list), a personal
+rating, and notes. Private, owner-only RLS, never treated as verified
+data about a site. See `docs/dive-log.md`.
 
 **Deliberately out of scope:** booking/payments, a full marketplace,
 social features/messaging, a complete dive log/carnet, live flight

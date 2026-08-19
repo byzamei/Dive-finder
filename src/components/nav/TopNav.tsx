@@ -12,6 +12,7 @@ const items = [
   { href: "/map", label: "Map" },
   { href: "/compare", label: "Compare" },
   { href: "/gear/mask-finder", label: "Mask Finder" },
+  { href: "/logbook", label: "Logbook" },
   { href: "/saved", label: "Saved" },
 ];
 

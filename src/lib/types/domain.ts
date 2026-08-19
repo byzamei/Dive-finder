@@ -322,6 +322,31 @@ export interface EarnedBadge {
   description: string;
 }
 
+export type GasType = "air" | "nitrox" | "other";
+
+export interface DiveLogEntry {
+  id: UUID;
+  user_id: UUID;
+  dive_date: ISODateString;
+  site_id: UUID | null;
+  site_name: string | null;
+  destination_id: UUID | null;
+  duration_minutes: number | null;
+  max_depth_m: number | null;
+  avg_depth_m: number | null;
+  water_temp_c: number | null;
+  visibility_bucket: string | null;
+  current_bucket: CurrentLevel | null;
+  buddy_name: string | null;
+  gas_type: GasType | null;
+  nitrox_percentage: number | null;
+  species_observed: UUID[];
+  rating: number | null;
+  notes: string | null;
+  created_at: ISODateString;
+  updated_at: ISODateString;
+}
+
 export interface Review {
   id: UUID;
   user_id: UUID | null;

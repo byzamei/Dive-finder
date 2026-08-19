@@ -20,12 +20,14 @@ export function ProfileHeader({
   diverProfile,
   savedCount,
   speciesSeenCount,
+  divesLoggedCount,
 }: {
   userId: string;
   profile: Profile;
   diverProfile: Partial<DiverProfile> | null;
   savedCount: number;
   speciesSeenCount: number;
+  divesLoggedCount: number;
 }) {
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [editing, setEditing] = useState(false);
@@ -34,7 +36,7 @@ export function ProfileHeader({
   const [homeBase, setHomeBase] = useState(profile.home_base ?? "");
   const [saving, setSaving] = useState(false);
 
-  const badges = computeBadges({ diverProfile, savedCount, speciesSeenCount });
+  const badges = computeBadges({ diverProfile, savedCount, speciesSeenCount, divesLoggedCount });
 
   async function save() {
     setSaving(true);
@@ -108,10 +110,10 @@ export function ProfileHeader({
           <p className="font-display text-lg text-abyss-900">{speciesSeenCount}</p>
           <p className="text-xs text-abyss-400">Species seen</p>
         </Link>
-        <div>
-          <p className="font-display text-lg text-abyss-900">{diverProfile?.number_of_dives_bucket ?? "—"}</p>
+        <Link href="/logbook" className="focus-ring rounded-lg hover:bg-abyss-50">
+          <p className="font-display text-lg text-abyss-900">{divesLoggedCount}</p>
           <p className="text-xs text-abyss-400">Dives logged</p>
-        </div>
+        </Link>
       </div>
 
       <div className="border-t border-abyss-100 px-5 py-4 sm:px-6">
