@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { LogoMark } from "@/components/LogoMark";
 
 const items = [
   { href: "/discover", label: "Discover" },
@@ -20,7 +21,8 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 hidden border-b border-abyss-100 bg-sand-50/95 backdrop-blur md:block">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="font-display text-xl text-abyss-900">
+        <Link href="/" className="focus-ring flex items-center gap-2 font-display text-xl text-abyss-900">
+          <LogoMark className="h-8 w-8 rounded-lg" />
           DiveFinder
         </Link>
         <nav className="flex items-center gap-1">

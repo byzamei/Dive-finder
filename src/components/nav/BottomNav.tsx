@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 
 const items = [
   { href: "/discover", label: "Discover", icon: CompassIcon },
+  { href: "/gear/mask-finder", label: "Mask", icon: MaskIcon },
   { href: "/map", label: "Map", icon: MapIcon },
   { href: "/saved", label: "Saved", icon: HeartIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
@@ -50,6 +51,16 @@ function CompassIcon(props: React.SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
       <circle cx={12} cy={12} r={9} />
       <path d="M15 9l-2 6-4-2 2-6 4 2z" />
+    </svg>
+  );
+}
+function MaskIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
+      <circle cx={7.5} cy={12} r={4} />
+      <circle cx={16.5} cy={12} r={4} />
+      <path d="M11.2 12h1.6" />
+      <path d="M3.5 12v2.5a2 2 0 002 2H6" />
     </svg>
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoMark } from "@/components/LogoMark";
 
 // TopNav (logo + full nav) only renders at md: and up. Below that, the
 // BottomNav covers navigation but has no way back to "/" — this fills
@@ -15,7 +16,8 @@ export function MobileHeader() {
       className="sticky top-0 z-40 flex items-center border-b border-abyss-100 bg-sand-50/95 px-4 py-3 backdrop-blur md:hidden"
       style={{ paddingTop: "calc(0.75rem + var(--safe-area-top))" }}
     >
-      <Link href="/" className="focus-ring font-display text-lg text-abyss-900">
+      <Link href="/" className="focus-ring flex items-center gap-2 font-display text-lg text-abyss-900">
+        <LogoMark className="h-7 w-7 rounded-md" />
         DiveFinder
       </Link>
     </header>
