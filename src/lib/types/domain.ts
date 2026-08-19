@@ -330,12 +330,13 @@ export interface Review {
   rating: number | null;
   dive_date: ISODateString | null;
   visibility_bucket: string | null;
-  current_bucket: string | null;
+  current_bucket: CurrentLevel | null;
   water_temp_c: number | null;
   species_observed: UUID[];
   operator_name: string | null;
   note: string | null;
   status: "pending" | "published" | "rejected";
+  created_at: ISODateString;
 }
 
 // ── Search / scoring domain ────────────────────────────────────────────

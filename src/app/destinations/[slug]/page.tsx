@@ -9,11 +9,16 @@ import {
   getVerifiedClaims,
 } from "@/lib/services/destinationService";
 import { getIndicativePrices } from "@/lib/services/budgetService";
+import { listPublishedReviews, getUserReviewForEntity } from "@/lib/services/reviewService";
 import { Badge } from "@/components/badges/Badge";
 import { DemoDataBadge, FreshnessBadge, VerifiedAgoBadge } from "@/components/badges/DataBadges";
 import { SafetyNotice } from "@/components/SafetyNotice";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { featureFlags } from "@/lib/utils/featureFlags";
 import { formatBudgetRange, monthName } from "@/lib/utils/format";
 import { Card, CardBody } from "@/components/ui/Card";
+import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = await createClient();
@@ -42,6 +47,16 @@ export default async function DestinationPage({ params }: { params: { slug: stri
     .select("*")
     .eq("destination_id", destination.id)
     .order("month");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [reviews, userReview, { data: allSpecies }] = await Promise.all([
+    listPublishedReviews(supabase, "destination", destination.id),
+    user ? getUserReviewForEntity(supabase, user.id, "destination", destination.id) : Promise.resolve(null),
+    supabase.from("marine_species").select("*").order("common_name"),
+  ]);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -175,6 +190,20 @@ export default async function DestinationPage({ params }: { params: { slug: stri
           <p className="mt-2 text-sm italic text-abyss-400">No sourced claims recorded yet for this destination.</p>
         )}
       </section>
+
+      {featureFlags.communityReviewSubmission && (
+        <section className="mt-8">
+          <h2 className="font-display text-xl text-abyss-900">Diver reviews</h2>
+          <ReviewsList reviews={reviews} species={(allSpecies ?? []) as MarineSpecies[]} />
+          <ReviewForm
+            userId={user?.id ?? null}
+            entityType="destination"
+            entityId={destination.id}
+            species={(allSpecies ?? []) as MarineSpecies[]}
+            existingReview={userReview}
+          />
+        </section>
+      )}
 
       <div className="mt-10 rounded-xl2 border border-abyss-100 bg-sand-100 p-4">
         <SafetyNotice />

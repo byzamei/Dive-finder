@@ -3,9 +3,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getDiveSiteBySlug, getVerifiedClaims } from "@/lib/services/destinationService";
+import { listPublishedReviews, getUserReviewForEntity } from "@/lib/services/reviewService";
 import { Badge } from "@/components/badges/Badge";
 import { FreshnessBadge, VerifiedAgoBadge } from "@/components/badges/DataBadges";
 import { SafetyNotice } from "@/components/SafetyNotice";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { featureFlags } from "@/lib/utils/featureFlags";
+import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = await createClient();
@@ -19,10 +24,17 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
   const site = await getDiveSiteBySlug(supabase, params.slug);
   if (!site) notFound();
 
-  const [{ data: destination }, claims, { data: siteSpecies }] = await Promise.all([
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data: destination }, claims, { data: siteSpecies }, reviews, userReview, { data: allSpecies }] = await Promise.all([
     supabase.from("destinations").select("id, name, slug").eq("id", site.destination_id).maybeSingle(),
     getVerifiedClaims(supabase, "dive_site", site.id),
     supabase.from("site_species").select("marine_species(id, slug, common_name)").eq("site_id", site.id),
+    listPublishedReviews(supabase, "site", site.id),
+    user ? getUserReviewForEntity(supabase, user.id, "site", site.id) : Promise.resolve(null),
+    supabase.from("marine_species").select("*").order("common_name"),
   ]);
 
   return (
@@ -96,6 +108,20 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
           <p className="mt-2 text-sm italic text-abyss-400">No sourced claims recorded yet for this site.</p>
         )}
       </section>
+
+      {featureFlags.communityReviewSubmission && (
+        <section className="mt-8">
+          <h2 className="font-display text-xl text-abyss-900">Diver reviews</h2>
+          <ReviewsList reviews={reviews} species={(allSpecies ?? []) as MarineSpecies[]} />
+          <ReviewForm
+            userId={user?.id ?? null}
+            entityType="site"
+            entityId={site.id}
+            species={(allSpecies ?? []) as MarineSpecies[]}
+            existingReview={userReview}
+          />
+        </section>
+      )}
 
       <div className="mt-10 rounded-xl2 border border-abyss-100 bg-sand-100 p-4">
         <SafetyNotice />

@@ -207,6 +207,11 @@ philosophy as the scoring engine), named saved lists instead of one flat
 favorites pile, and a personal marine-species "life list" with a seen/all
 filter on the Wildlife pages.
 
+**Added post-V1 (by request):** diver reviews — the `reviews` table was
+modeled in V1 but its submission UI stayed off behind a feature flag until
+moderation tooling existed; both are now built (`src/components/reviews/*`,
+`/admin/reviews`) and the flag is on. See `docs/reviews.md`.
+
 **Deliberately out of scope:** booking/payments, a full marketplace,
 social features/messaging, a complete dive log/carnet, live flight
 pricing, real-time liveaboard/dive-center availability (needs real

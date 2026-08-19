@@ -41,7 +41,7 @@ what the diver declared. Declared experience is never an authorization.
 | Conditions fit | 10 | no `acceptedCurrent`, or destination's current is unknown |
 | Dive type fit | 10 | no `diveTypes` selected, or destination has no tags |
 | Accessibility | 5 | **always** — V1 has no verified travel-time/flight data source (out of scope, see product brief §14) |
-| Quality/reviews | 5 | no published reviews yet (review submission is feature-flagged off in V1) |
+| Quality/reviews | 5 | no *published* reviews yet for that destination — see `docs/reviews.md` |
 
 Each dimension function in `dimensions.ts` returns a number in `[0, 1]` or
 `null`. **`null` is load-bearing** — it means "no data", and is excluded

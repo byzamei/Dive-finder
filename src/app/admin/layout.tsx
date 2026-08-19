@@ -5,6 +5,7 @@ const links = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/data-health", label: "Data Health" },
   { href: "/admin/review", label: "Review queue" },
+  { href: "/admin/reviews", label: "Diver reviews" },
   { href: "/admin/claims", label: "Claims" },
   { href: "/admin/sources", label: "Sources" },
   { href: "/admin/destinations", label: "Destinations" },

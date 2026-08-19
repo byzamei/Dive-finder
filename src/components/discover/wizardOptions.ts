@@ -45,3 +45,10 @@ export const DIVE_TYPE_TAGS: { value: DiveTypeTag; label: string }[] = [
 ];
 
 export const CURRENCIES = ["EUR", "USD", "GBP", "AUD"];
+
+export const VISIBILITY_BUCKETS: { value: string; label: string }[] = [
+  { value: "poor", label: "Poor (<5m)" },
+  { value: "fair", label: "Fair (5–10m)" },
+  { value: "good", label: "Good (10–20m)" },
+  { value: "excellent", label: "Excellent (20m+)" },
+];
