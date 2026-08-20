@@ -52,11 +52,11 @@ export function SearchInspiration() {
   if (withPrice.length === 0 && exploreByCountry.length === 0) return null;
 
   return (
-    <div className="mt-8 border-t border-abyss-100 pt-6">
+    <div className="mt-10">
       {withPrice.length > 0 && (
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-abyss-400">Idées de dernière minute</p>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <h2 className="font-display text-xl text-abyss-900">Idées de dernière minute</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {withPrice.map((d, i) => (
               <InspirationCard key={d.id} destination={d} priceLabel={formatDestinationPrice(prices.get(d.id)!)} icon={ICONS[i % ICONS.length]!} />
             ))}
@@ -65,9 +65,9 @@ export function SearchInspiration() {
       )}
 
       {exploreByCountry.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-abyss-400">Explorez un pays en particulier</p>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="mt-10">
+          <h2 className="font-display text-xl text-abyss-900">Explorez un pays en particulier</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {exploreByCountry.map((d, i) => (
               <InspirationCard key={d.id} destination={d} icon={ICONS[i % ICONS.length]!} />
             ))}
@@ -90,15 +90,15 @@ function InspirationCard({
   return (
     <Link
       href={`/destinations/${destination.slug}`}
-      className="focus-ring block w-40 shrink-0 overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
+      className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex h-24 items-center justify-center bg-gradient-to-br from-ocean-600 to-seaglass-500 text-white/90">
-        <Icon className="h-9 w-9" />
+      <div className="flex h-32 items-center justify-center bg-gradient-to-br from-ocean-600 to-seaglass-500 text-white/90 sm:h-36">
+        <Icon className="h-11 w-11" />
       </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-medium text-abyss-900">{destination.name}</p>
-        {destination.country && <p className="truncate text-xs text-abyss-500">{destination.country}</p>}
-        {priceLabel && <p className="mt-1 text-sm font-semibold text-ocean-700">{priceLabel}</p>}
+      <div className="p-3.5">
+        <p className="truncate font-medium text-abyss-900">{destination.name}</p>
+        {destination.country && <p className="mt-0.5 truncate text-sm text-abyss-500">{destination.country}</p>}
+        {priceLabel && <p className="mt-1.5 text-sm font-semibold text-ocean-700">{priceLabel}</p>}
       </div>
     </Link>
   );

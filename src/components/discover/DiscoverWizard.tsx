@@ -96,6 +96,69 @@ export function DiscoverWizard() {
   const current = STEPS[step] ?? STEPS[0];
   const Icon = current.icon;
 
+  if (step === 0) {
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="mx-auto max-w-2xl">
+          <StepProgress step={step} />
+
+          {/* A tight search box, Booking-style — only the actual question
+              lives in a bordered card. Inspiration content below is full
+              width, not boxed, so the CTA reads as "the form," not one
+              card among several. */}
+          <div className="mt-6 rounded-xl2 border-2 border-ocean-200 bg-white p-5 shadow-lg sm:p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ocean-50 text-ocean-600">
+                <CalendarIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="font-display text-xl text-abyss-900">{current.title}</h1>
+                <p className="mt-1 text-sm text-abyss-500">{current.subtitle}</p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <FieldLabel>Months</FieldLabel>
+              <div className="flex flex-wrap gap-2">
+                {MONTHS.map((m, i) => (
+                  <Chip
+                    key={m}
+                    selected={(criteria.months ?? []).includes(i + 1)}
+                    onClick={() => update("months", toggleInArray(criteria.months, i + 1))}
+                  >
+                    {m}
+                  </Chip>
+                ))}
+              </div>
+              <div className="mt-4">
+                <FieldLabel>Trip length (days)</FieldLabel>
+                <input
+                  type="number"
+                  min={1}
+                  className="focus-ring w-32 rounded-lg border border-abyss-200 px-3 py-2.5 text-sm"
+                  value={criteria.durationDays ?? ""}
+                  onChange={(e) => update("durationDays", e.target.value ? Number(e.target.value) : undefined)}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-4 border-t border-abyss-100 pt-4">
+              <Button onClick={() => setStep(1)} className="flex-1 justify-center">
+                Next
+                <ArrowIcon className="h-4 w-4" />
+              </Button>
+              <button type="button" onClick={submit} className="focus-ring shrink-0 text-sm text-abyss-500 underline">
+                Skip to results
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <SearchInspiration />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <StepProgress step={step} />
@@ -113,34 +176,6 @@ export function DiscoverWizard() {
           </div>
 
           <div className="mt-6 min-h-[220px]">
-            {step === 0 && (
-              <div>
-                <FieldLabel>Months</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {MONTHS.map((m, i) => (
-                    <Chip
-                      key={m}
-                      selected={(criteria.months ?? []).includes(i + 1)}
-                      onClick={() => update("months", toggleInArray(criteria.months, i + 1))}
-                    >
-                      {m}
-                    </Chip>
-                  ))}
-                </div>
-                <div className="mt-6">
-                  <FieldLabel>Trip length (days)</FieldLabel>
-                  <input
-                    type="number"
-                    min={1}
-                    className="focus-ring w-32 rounded-lg border border-abyss-200 px-3 py-2.5 text-sm"
-                    value={criteria.durationDays ?? ""}
-                    onChange={(e) => update("durationDays", e.target.value ? Number(e.target.value) : undefined)}
-                  />
-                </div>
-                <SearchInspiration />
-              </div>
-            )}
-
             {step === 1 && (
               <div>
                 <FieldLabel>Total budget</FieldLabel>
