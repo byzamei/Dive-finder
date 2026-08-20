@@ -8,7 +8,17 @@ instead:
 
 ## The five primary tabs
 
-1. **Discover** (`/discover`) — the search wizard. Front door.
+1. **Discover** (`/discover`) — the search entry point. Its first screen is
+   a mode selector, not a form: "help me find a destination" (the original
+   6-step scored wizard), "I'm chasing an animal" (same wizard, starting at
+   the Wildlife step), or "I already know my destination" (a name search
+   that jumps straight to `/destinations/[slug]`, bypassing the wizard
+   entirely). The three homepage quick-cards (`?entry=dates|animal|destination`)
+   pre-select a mode and skip the selector; arriving at `/discover` directly
+   (e.g. from the nav) shows it. Rationale: the old wizard forced everyone
+   through the same dates-first linear form even when they already knew
+   their destination or just wanted to search by animal — this lets people
+   choose how they want to search instead of assuming one path fits all.
 2. **Explore** (`/explore`) — a hub page linking to every way to browse the
    catalog: Destinations, Sites, Map, Wildlife, Compare, Mask Finder. These
    were all separate top-level nav items before; they're the same content
