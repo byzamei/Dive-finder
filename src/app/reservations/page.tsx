@@ -1,32 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { listReservations } from "@/lib/services/reservationService";
+import { ReservationsBoard } from "@/components/reservations/ReservationsBoard";
 import { ButtonLink } from "@/components/ui/Button";
 
 export const metadata: Metadata = { title: "Reservations" };
 
-// Placeholder for the upcoming trip/reservation tracker (upcoming / past /
-// cancelled, linked to real operators) — the full version is a separate,
-// larger build. This page exists now so /reservations is never a dead nav
-// link once the tab is live. Soft-gated like the rest of the app's
-// personal features (Mask Finder save, species life list): the tab stays
-// visible and useful-looking to signed-out visitors instead of hard-
-// redirecting, so it can do its job of showing what an account unlocks.
+// Soft-gated like the rest of the app's personal features (Mask Finder
+// save, species life list): the tab stays visible and useful-looking to
+// signed-out visitors instead of hard-redirecting, so it can do its job of
+// showing what an account unlocks.
 export default async function ReservationsPage() {
   const user = await getCurrentUser();
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="font-display text-3xl text-abyss-900">Reservations</h1>
       <p className="mt-2 text-abyss-500">Track dive trips you&apos;ve booked — upcoming, past, or cancelled.</p>
 
       <div className="mt-8">
         {user ? (
-          <EmptyState
-            title="Reservation tracking is coming soon"
-            description="For now, use Favorites to bookmark destinations and operators you're planning to book."
-          />
+          <ReservationsBoardData userId={user.id} />
         ) : (
           <div className="rounded-xl2 border border-abyss-100 bg-sand-100 p-6 text-center">
             <p className="font-medium text-abyss-800">Sign in to track your reservations</p>
@@ -42,7 +38,7 @@ export default async function ReservationsPage() {
       </div>
 
       <p className="mt-6 text-sm text-abyss-400">
-        In the meantime, browse{" "}
+        Looking for a place to book?{" "}
         <Link href="/explore" className="text-ocean-600 underline">
           Explore
         </Link>{" "}
@@ -50,4 +46,16 @@ export default async function ReservationsPage() {
       </p>
     </main>
   );
+}
+
+async function ReservationsBoardData({ userId }: { userId: string }) {
+  const supabase = await createClient();
+  const [reservations, { data: destinationRows }] = await Promise.all([
+    listReservations(supabase, userId),
+    supabase.from("destinations").select("id, slug, name").eq("status", "published").order("name"),
+  ]);
+
+  const destinations = (destinationRows ?? []) as { id: string; slug: string; name: string }[];
+
+  return <ReservationsBoard userId={userId} initialReservations={reservations} destinations={destinations} />;
 }

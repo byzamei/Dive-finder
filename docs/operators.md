@@ -46,6 +46,26 @@ sourcing every entry from a real, checkable place:
   populate/refresh SQL is idempotent (`on conflict (destination_id, name)
   do update`) instead of creating duplicates.
 
+## Booking roadmap
+
+Real payments/inventory require a commercial relationship with each
+operator first — building that before any partnership exists would mean
+either faking availability or silently routing money through an
+unauthorized channel. Three phases:
+
+1. **Personal tracker (now)** — `/reservations`: divers manually record
+   trips they've booked directly with an operator, tagged with a
+   destination and (optionally) the operator's name. DiveFinder doesn't
+   touch the booking or the money.
+2. **Request to book** — once at least one real partnership exists, a
+   "request to book" button on that operator's card sends an inquiry
+   (email/API) instead of a real-time confirmation; the diver still
+   finalizes with the operator directly.
+3. **Full booking** — real-time availability and payment, once enough
+   operators are integrated to make it worth building — otherwise it's a
+   sparsely-covered feature that misleads divers into thinking coverage is
+   broader than it is.
+
 ## Keeping it current: the weekly refresh routine
 
 A weekly scheduled job re-researches each destination for new or changed
@@ -68,3 +88,7 @@ new batch is ready to review and paste.
   had no outbound link column before this; added one.
 - `supabase/migrations/0015_operator_unique.sql` — uniqueness for
   idempotent weekly upserts.
+- `src/lib/services/reservationService.ts`,
+  `src/components/reservations/ReservationsBoard.tsx`,
+  `supabase/migrations/0017_reservations.sql` — Phase 1 of the booking
+  roadmap above.

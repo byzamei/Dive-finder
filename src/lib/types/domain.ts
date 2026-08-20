@@ -350,6 +350,25 @@ export interface DiveLogEntry {
   updated_at: ISODateString;
 }
 
+export type ReservationStatus = "confirmed" | "cancelled";
+export type OperatorType = "dive_center" | "liveaboard";
+
+export interface Reservation {
+  id: UUID;
+  user_id: UUID;
+  destination_id: UUID | null;
+  destination_name: string | null;
+  operator_type: OperatorType | null;
+  operator_id: UUID | null;
+  operator_name: string | null;
+  start_date: ISODateString;
+  end_date: ISODateString | null;
+  status: ReservationStatus;
+  notes: string | null;
+  created_at: ISODateString;
+  updated_at: ISODateString;
+}
+
 export interface Review {
   id: UUID;
   user_id: UUID | null;

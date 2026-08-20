@@ -25,10 +25,13 @@ instead:
    underneath, just different lenses on it, so they're grouped rather than
    competing for nav space.
 3. **Reservations** (`/reservations`) — a personal trip/booking tracker
-   (upcoming/past/cancelled, linked to real operators). Currently a
-   placeholder — the real version is a separate build. Deliberately
-   distinct from **Logbook**: a reservation is a booking, a logbook entry
-   is one dive; a reservation can contain many dives.
+   (upcoming/past/cancelled), Phase 1 of the booking roadmap in
+   `docs/operators.md`: divers manually record trips they've booked
+   elsewhere, tagged with a destination and (optionally) the operator's
+   name. No payment or real-time inventory yet — that requires operator
+   partnerships first (Phase 2/3). Deliberately distinct from **Logbook**:
+   a reservation is a booking, a logbook entry is one dive; a reservation
+   can contain many dives.
 4. **Favorites** (`/saved`) — favorites/named lists. Route stayed `/saved`
    (established, widely linked) even though the label became "Favorites";
    `/reservations` got the matching route rename since it was brand new.
