@@ -6,21 +6,18 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { LogoMark } from "@/components/LogoMark";
 
-// TopNav (logo + full nav) only renders at md: and up. BottomNav covers the
-// five most-used sections on phones, but everything else (Sites, Wildlife,
-// Compare, Logbook…) needs a way in too — this menu makes every section
-// TopNav has reachable on a phone, so mobile has the same features as
-// desktop, not a trimmed-down subset.
+// TopNav (logo + full nav) only renders at md: and up. BottomNav already
+// covers Discover/Explore/Trips/Saved/Account on phones, so this menu only
+// needs the sections one level under "Explore" — everything else is
+// already one tap away via the bottom bar.
 const MENU_ITEMS = [
-  { href: "/discover", label: "Discover" },
+  { href: "/explore", label: "Explore (all)" },
+  { href: "/destinations", label: "Destinations" },
   { href: "/sites", label: "Sites" },
   { href: "/wildlife", label: "Wildlife" },
   { href: "/map", label: "Map" },
   { href: "/compare", label: "Compare" },
   { href: "/gear/mask-finder", label: "Mask Finder" },
-  { href: "/logbook", label: "Logbook" },
-  { href: "/saved", label: "Saved" },
-  { href: "/profile", label: "Profile" },
 ];
 
 export function MobileHeader() {

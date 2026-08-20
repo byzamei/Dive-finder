@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils/cn";
 
 const items = [
   { href: "/discover", label: "Discover", icon: CompassIcon },
-  { href: "/gear/mask-finder", label: "Mask", icon: MaskIcon },
-  { href: "/map", label: "Map", icon: MapIcon },
+  { href: "/explore", label: "Explore", icon: GridIcon },
+  { href: "/trips", label: "Trips", icon: SuitcaseIcon },
   { href: "/saved", label: "Saved", icon: HeartIcon },
-  { href: "/profile", label: "Profile", icon: UserIcon },
+  { href: "/profile", label: "Account", icon: UserIcon },
 ];
 
 export function BottomNav() {
@@ -54,21 +54,21 @@ function CompassIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function MaskIcon(props: React.SVGProps<SVGSVGElement>) {
+function GridIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
-      <circle cx={7.5} cy={12} r={4} />
-      <circle cx={16.5} cy={12} r={4} />
-      <path d="M11.2 12h1.6" />
-      <path d="M3.5 12v2.5a2 2 0 002 2H6" />
+      <rect x={3.5} y={3.5} width={7} height={7} rx={1.5} />
+      <rect x={13.5} y={3.5} width={7} height={7} rx={1.5} />
+      <rect x={3.5} y={13.5} width={7} height={7} rx={1.5} />
+      <rect x={13.5} y={13.5} width={7} height={7} rx={1.5} />
     </svg>
   );
 }
-function MapIcon(props: React.SVGProps<SVGSVGElement>) {
+function SuitcaseIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
-      <path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z" />
-      <path d="M9 4v14M15 6v14" />
+      <rect x={3} y={7} width={18} height={13} rx={2} />
+      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 12h18" />
     </svg>
   );
 }

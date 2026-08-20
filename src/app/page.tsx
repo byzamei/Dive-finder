@@ -52,13 +52,13 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-6 pb-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <Link
-            href="/sites"
+            href="/explore"
             className="focus-ring flex items-center justify-between gap-4 rounded-xl2 border border-abyss-100 bg-white p-5 shadow-card transition-transform hover:-translate-y-0.5"
           >
             <div>
-              <h2 className="font-display text-lg text-abyss-900">Dive sites</h2>
+              <h2 className="font-display text-lg text-abyss-900">Explore the catalog</h2>
               <p className="mt-1 text-sm text-abyss-500">
-                Browse every published spot directly, filtered by destination or access type.
+                Destinations, dive sites, the map, wildlife, and side-by-side comparisons.
               </p>
             </div>
             <span aria-hidden className="shrink-0 text-2xl text-ocean-600">
