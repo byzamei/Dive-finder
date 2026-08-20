@@ -45,6 +45,7 @@ const LANDMARK = {
   faceEdgeLeft: 454,
   eyeInnerRight: 133,
   eyeInnerLeft: 362,
+  noseTip: 1,
 } as const;
 
 const REQUIRED_INDICES = Object.values(LANDMARK);
@@ -93,4 +94,63 @@ export function computeFaceProfile(
   const faceWidth = faceShape === "round" ? "wide" : faceShape === "long" ? "narrow" : "medium";
 
   return { faceWidth, noseBridge, faceShape };
+}
+
+/**
+ * Signed, scale-independent estimate of head turn: how far the nose tip
+ * sits from the midpoint between the two face-edge landmarks, relative to
+ * face width. ~0 when facing the camera; larger magnitude the further the
+ * head is turned. The SIGN's real-world left/right meaning depends on the
+ * camera's raw (unmirrored) coordinate space, which callers should not
+ * assume — see MultiAngleFaceScan.tsx, which only checks magnitude and
+ * that two "turned" captures have opposite signs, never a specific side.
+ */
+export function computeYaw(landmarks: NormalizedLandmark[], frameWidth: number, frameHeight: number): number {
+  if (!hasRequiredLandmarks(landmarks)) {
+    throw new Error("computeYaw: missing required landmark indices");
+  }
+  const left = landmarks[LANDMARK.faceEdgeLeft]!;
+  const right = landmarks[LANDMARK.faceEdgeRight]!;
+  const nose = landmarks[LANDMARK.noseTip]!;
+  const faceWidthPx = distance(left, right, frameWidth, frameHeight);
+  const midXPx = ((left.x + right.x) / 2) * frameWidth;
+  const noseXPx = nose.x * frameWidth;
+  return (noseXPx - midXPx) / faceWidthPx;
+}
+
+// A capture reads as "turned" once |yaw| clears this — small enough to be
+// an easy, comfortable turn, large enough not to trigger on head-scan jitter.
+export const YAW_TURN_THRESHOLD = 0.06;
+export const YAW_CENTER_MAX = 0.03;
+
+/**
+ * Combines FaceProfiles captured from several head angles into one, by
+ * taking the most-common category per field (ties keep the first/center
+ * capture's value). This is honest noise reduction — several readings
+ * agreeing is more trustworthy than any single frame — never a claim of
+ * sub-pixel or clinical precision. See docs/gear-mask-finder.md.
+ */
+export function aggregateFaceProfiles(profiles: FaceProfile[]): FaceProfile {
+  if (profiles.length === 0) {
+    throw new Error("aggregateFaceProfiles: at least one profile is required");
+  }
+  function mode<K extends keyof FaceProfile>(key: K): FaceProfile[K] {
+    const counts = new Map<FaceProfile[K], number>();
+    for (const p of profiles) counts.set(p[key], (counts.get(p[key]) ?? 0) + 1);
+    let best = profiles[0]![key];
+    let bestCount = 0;
+    for (const p of profiles) {
+      const count = counts.get(p[key])!;
+      if (count > bestCount) {
+        bestCount = count;
+        best = p[key];
+      }
+    }
+    return best;
+  }
+  return {
+    faceWidth: mode("faceWidth"),
+    noseBridge: mode("noseBridge"),
+    faceShape: mode("faceShape"),
+  };
 }

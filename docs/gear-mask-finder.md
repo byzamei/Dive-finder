@@ -54,6 +54,25 @@ silently: `MaskFinderFlow` always shows the detected profile on a
 "review" screen with editable chips (`ProfileChips.tsx`) before running
 any match, so a wrong guess is one tap to fix.
 
+### Multi-angle capture
+
+`FaceScanCamera.tsx` doesn't stop at one frame. It guides the user through
+three captures — center, then turned to each side — and combines them with
+`aggregateFaceProfiles()` (majority vote per category field, ties keep the
+center capture). This is honest noise reduction, not a claim of finer
+precision: several readings agreeing is more trustworthy than trusting
+whatever one frame happened to look like, but the underlying math is the
+same 2D-ratio heuristic described above, run three times.
+
+`computeYaw()` estimates how far the head is turned from a scale-independent
+nose-tip-to-face-edge-midpoint ratio, purely to gate the UI (the capture
+button only enables once the current pose is actually held, and the two
+"turned" captures must have opposite yaw sign so a user can't just tap
+through three identical frontal frames). The sign of yaw is never assumed
+to mean a specific physical left/right — the raw camera frame's coordinate
+convention isn't something the code relies on being correct in one
+particular direction, only that two turns differ from each other.
+
 ## Data sourcing for the mask catalog (`masks` table)
 
 Lens type and volume category are published, verifiable product-design

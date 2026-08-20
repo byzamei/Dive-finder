@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeFaceProfile, hasRequiredLandmarks, type NormalizedLandmark } from "@/lib/gear/faceMeasurement";
+import {
+  aggregateFaceProfiles,
+  computeFaceProfile,
+  computeYaw,
+  hasRequiredLandmarks,
+  type NormalizedLandmark,
+} from "@/lib/gear/faceMeasurement";
 import { matchMask, matchMasks } from "@/lib/gear/maskFit";
 import type { FaceProfile, Mask } from "@/lib/types/domain";
 
@@ -12,6 +18,7 @@ function makeLandmarks(overrides: Partial<Record<number, NormalizedLandmark>> = 
   base[454] = { x: 0.7, y: 0.5 }; // face edge left
   base[133] = { x: 0.47, y: 0.45 }; // eye inner right
   base[362] = { x: 0.53, y: 0.45 }; // eye inner left
+  base[1] = { x: 0.5, y: 0.5 }; // nose tip, centered by default
   return base.map((lm, i) => overrides[i] ?? lm);
 }
 
@@ -86,6 +93,50 @@ describe("faceMeasurement — pure geometry, no camera/DOM required", () => {
     const small = computeFaceProfile(landmarks, 50, 50);
     const large = computeFaceProfile(landmarks, 4000, 4000);
     expect(small).toEqual(large);
+  });
+});
+
+describe("computeYaw — head-turn estimate used to guide multi-angle capture", () => {
+  it("reads ~0 when the nose tip is centered between the face edges", () => {
+    const landmarks = makeLandmarks({ 1: { x: 0.5, y: 0.5 } });
+    expect(Math.abs(computeYaw(landmarks, 100, 100))).toBeLessThan(0.01);
+  });
+
+  it("reads a large positive value when the nose shifts toward one face edge", () => {
+    const landmarks = makeLandmarks({ 1: { x: 0.62, y: 0.5 } });
+    expect(computeYaw(landmarks, 100, 100)).toBeGreaterThan(0.06);
+  });
+
+  it("reads a large negative value when the nose shifts toward the other face edge", () => {
+    const landmarks = makeLandmarks({ 1: { x: 0.38, y: 0.5 } });
+    expect(computeYaw(landmarks, 100, 100)).toBeLessThan(-0.06);
+  });
+});
+
+describe("aggregateFaceProfiles — combines multi-angle captures without fabricating precision", () => {
+  it("returns the single profile unchanged when only one capture exists", () => {
+    const profile: FaceProfile = { faceWidth: "narrow", noseBridge: "wide", faceShape: "long" };
+    expect(aggregateFaceProfiles([profile])).toEqual(profile);
+  });
+
+  it("takes the majority category per field across captures", () => {
+    const center: FaceProfile = { faceWidth: "medium", noseBridge: "narrow", faceShape: "oval" };
+    const left: FaceProfile = { faceWidth: "medium", noseBridge: "wide", faceShape: "oval" };
+    const right: FaceProfile = { faceWidth: "narrow", noseBridge: "narrow", faceShape: "round" };
+    // faceWidth: medium,medium,narrow -> medium. noseBridge: narrow,wide,narrow -> narrow.
+    // faceShape: oval,oval,round -> oval.
+    expect(aggregateFaceProfiles([center, left, right])).toEqual({
+      faceWidth: "medium",
+      noseBridge: "narrow",
+      faceShape: "oval",
+    });
+  });
+
+  it("breaks a three-way tie by keeping the first (center) capture's value", () => {
+    const center: FaceProfile = { faceWidth: "narrow", noseBridge: "medium", faceShape: "oval" };
+    const left: FaceProfile = { faceWidth: "medium", noseBridge: "medium", faceShape: "oval" };
+    const right: FaceProfile = { faceWidth: "wide", noseBridge: "medium", faceShape: "oval" };
+    expect(aggregateFaceProfiles([center, left, right]).faceWidth).toBe("narrow");
   });
 });
 

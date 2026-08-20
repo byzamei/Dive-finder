@@ -60,7 +60,8 @@ export function MaskFinderFlow() {
         <h1 className="font-display text-2xl text-abyss-900">Mask Finder</h1>
         <p className="mt-2 text-abyss-600">
           Find a mask shape that suits your face — a scuba mask that leaks constantly is usually a fit problem, not a
-          technique problem.
+          technique problem. The scan captures three angles (center and both sides) so the result isn&apos;t riding
+          on one lucky frame.
         </p>
 
         <div className="mt-6 rounded-xl2 border border-abyss-100 bg-sand-100 p-4 text-sm text-abyss-600">
@@ -92,7 +93,9 @@ export function MaskFinderFlow() {
     return (
       <div>
         <h1 className="font-display text-2xl text-abyss-900">Scanning…</h1>
-        <p className="mt-2 text-sm text-abyss-500">Look straight at the camera in good light.</p>
+        <p className="mt-2 text-sm text-abyss-500">
+          We&apos;ll guide you through three quick angles — good light helps.
+        </p>
         <div className="mt-4 max-w-sm">
           <FaceScanCamera
             onCaptured={(p) => {
