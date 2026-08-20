@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { listMasks } from "@/lib/services/gearService";
 import { matchMasks } from "@/lib/gear/maskFit";
-import type { FaceProfile, Mask } from "@/lib/types/domain";
+import { MASK_CONCERN_OPTIONS, getConcernAdvice } from "@/lib/gear/maskConcerns";
+import type { FaceProfile, Mask, MaskFitConcern } from "@/lib/types/domain";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/discover/Chip";
 import { FaceScanCamera } from "./FaceScanCamera";
 import { ProfileChips } from "./ProfileChips";
 import { MaskMatchCard } from "./MaskMatchCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-type Step = "intro" | "camera" | "review" | "results";
+type Step = "intro" | "camera" | "review" | "concerns" | "results";
 
 const DEFAULT_PROFILE: FaceProfile = { faceWidth: "medium", noseBridge: "medium", faceShape: "oval" };
 
@@ -21,6 +23,7 @@ export function MaskFinderFlow() {
   const [step, setStep] = useState<Step>("intro");
   const [profile, setProfile] = useState<FaceProfile>(DEFAULT_PROFILE);
   const [scanned, setScanned] = useState(false);
+  const [concerns, setConcerns] = useState<MaskFitConcern[]>([]);
   const [masks, setMasks] = useState<Mask[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -47,6 +50,7 @@ export function MaskFinderFlow() {
         mask_face_width: profile.faceWidth,
         mask_nose_bridge: profile.noseBridge,
         mask_face_shape: profile.faceShape,
+        mask_fit_concerns: concerns,
       },
       { onConflict: "user_id" }
     );
@@ -129,6 +133,34 @@ export function MaskFinderFlow() {
           <Button variant="ghost" onClick={() => setStep("intro")}>
             Back
           </Button>
+          <Button onClick={() => setStep("concerns")}>Continue</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "concerns") {
+    function toggleConcern(value: MaskFitConcern) {
+      setConcerns((c) => (c.includes(value) ? c.filter((v) => v !== value) : [...c, value]));
+    }
+    return (
+      <div>
+        <h1 className="font-display text-2xl text-abyss-900">Any recurring problems with masks?</h1>
+        <p className="mt-2 text-sm text-abyss-500">
+          Optional — this won&apos;t change your face profile, but we&apos;ll show relevant tips alongside your
+          matches. Pick as many as apply.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {MASK_CONCERN_OPTIONS.map((o) => (
+            <Chip key={o.value} selected={concerns.includes(o.value)} onClick={() => toggleConcern(o.value)}>
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+        <div className="mt-6 flex gap-3">
+          <Button variant="ghost" onClick={() => setStep("review")}>
+            Back
+          </Button>
           <Button onClick={() => setStep("results")}>See matching masks</Button>
         </div>
       </div>
@@ -136,6 +168,7 @@ export function MaskFinderFlow() {
   }
 
   const results = masks ? matchMasks(profile, masks) : null;
+  const advice = getConcernAdvice(concerns);
 
   return (
     <div>
@@ -149,10 +182,34 @@ export function MaskFinderFlow() {
         <Button variant="outline" size="sm" onClick={() => setStep("review")}>
           Adjust profile
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setStep("concerns")}>
+          Adjust concerns
+        </Button>
         <Button variant="ghost" size="sm" onClick={saveToProfile} disabled={saving || saved}>
           {saved ? "Saved to profile" : saving ? "Saving…" : "Save to my profile"}
         </Button>
       </div>
+
+      {advice.length > 0 && (
+        <div className="mt-6 rounded-xl2 border border-seaglass-200 bg-seaglass-50 p-4">
+          <p className="font-medium text-seaglass-800">Tips based on what you told us</p>
+          <p className="mt-1 text-xs text-seaglass-700">
+            General fitting/technique guidance, not a claim about any specific mask below.
+          </p>
+          <div className="mt-3 space-y-3">
+            {advice.map((a) => (
+              <div key={a.concern}>
+                <p className="text-sm font-medium text-abyss-800">{a.label}</p>
+                <ul className="mt-1 list-inside list-disc text-sm text-abyss-600">
+                  {a.tips.map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 space-y-4">
         {results === null && <p className="text-sm text-abyss-400">Loading masks…</p>}

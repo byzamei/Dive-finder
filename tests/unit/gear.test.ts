@@ -7,6 +7,7 @@ import {
   type NormalizedLandmark,
 } from "@/lib/gear/faceMeasurement";
 import { matchMask, matchMasks } from "@/lib/gear/maskFit";
+import { MASK_CONCERN_OPTIONS, getConcernAdvice } from "@/lib/gear/maskConcerns";
 import type { FaceProfile, Mask } from "@/lib/types/domain";
 
 function makeLandmarks(overrides: Partial<Record<number, NormalizedLandmark>> = {}): NormalizedLandmark[] {
@@ -175,5 +176,30 @@ describe("maskFit — qualitative matching, never a fabricated numeric fit score
 
     const ranked = matchMasks(narrowProfile, [low, unknown, excellent]);
     expect(ranked.map((r) => r.mask.id)).toEqual(["a", "c", "b"]);
+  });
+});
+
+describe("getConcernAdvice — general tips, never mask-specific claims", () => {
+  it("returns nothing for no declared concerns", () => {
+    expect(getConcernAdvice([])).toEqual([]);
+  });
+
+  it("returns advice only for the declared concerns, each with at least one tip", () => {
+    const advice = getConcernAdvice(["fogs", "nose_pain"]);
+    expect(advice.map((a) => a.concern)).toEqual(["fogs", "nose_pain"]);
+    for (const entry of advice) {
+      expect(entry.tips.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("preserves the canonical option order regardless of input order", () => {
+    const advice = getConcernAdvice(["hard_to_equalize", "leaks"]);
+    expect(advice.map((a) => a.concern)).toEqual(["leaks", "hard_to_equalize"]);
+  });
+
+  it("has advice defined for every option in MASK_CONCERN_OPTIONS", () => {
+    const allValues = MASK_CONCERN_OPTIONS.map((o) => o.value);
+    const advice = getConcernAdvice(allValues);
+    expect(advice.length).toBe(allValues.length);
   });
 });

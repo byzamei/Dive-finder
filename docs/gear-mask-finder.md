@@ -73,6 +73,24 @@ to mean a specific physical left/right — the raw camera frame's coordinate
 convention isn't something the code relies on being correct in one
 particular direction, only that two turns differ from each other.
 
+## Fit concerns questionnaire
+
+After the face profile step, `MaskFinderFlow` asks an optional question:
+recurring problems the diver has had with masks before (leaks, fogging,
+nose-bridge pain, too tight, too loose, facial hair, hard to equalize —
+`src/lib/gear/maskConcerns.ts`). This is deliberately kept **separate**
+from the sourced `masks` catalog and from `maskFit.ts`'s matching logic:
+`getConcernAdvice()` returns general, widely-known fitting/technique tips
+per concern (e.g. "new masks fog until the manufacturing residue is
+scrubbed off"), never a claim about any specific mask in the catalog. The
+results page shows this as its own "Tips based on what you told us" panel,
+visually and structurally separate from the per-mask suitability cards, so
+self-reported subjective experience never gets conflated with sourced
+product data. Selected concerns persist to
+`diver_profiles.mask_fit_concerns` (migration `0013_mask_concerns.sql`)
+alongside the three face-profile categories, only when the user taps
+"Save to my profile".
+
 ## Data sourcing for the mask catalog (`masks` table)
 
 Lens type and volume category are published, verifiable product-design

@@ -101,6 +101,11 @@ run `supabase/migrations/0012_dive_log.sql` (already included in a
 regenerated `supabase/all_migrations.sql`) to add the `dive_log_entries`
 table — see `docs/dive-log.md`.
 
+**Mask Finder fit concerns:** if your project already existed before this
+was added, also run `supabase/migrations/0013_mask_concerns.sql` (already
+included in a regenerated `supabase/all_migrations.sql`) to add
+`diver_profiles.mask_fit_concerns` — see `docs/gear-mask-finder.md`.
+
 ## 7. Create an admin user
 
 1. Run the app (`npm run dev`) and sign up once via `/login` (magic link —

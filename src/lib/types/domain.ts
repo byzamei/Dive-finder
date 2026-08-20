@@ -286,6 +286,7 @@ export interface DiverProfile {
   mask_face_width: FaceWidthCategory | null;
   mask_nose_bridge: NoseBridgeCategory | null;
   mask_face_shape: FaceShapeCategory | null;
+  mask_fit_concerns: MaskFitConcern[];
 }
 
 export interface Favorite {
@@ -425,6 +426,14 @@ export type NoseBridgeCategory = "narrow" | "medium" | "wide";
 export type FaceShapeCategory = "long" | "oval" | "round";
 export type MaskLensType = "single" | "dual" | "frameless";
 export type MaskVolumeCategory = "low" | "medium" | "high";
+export type MaskFitConcern =
+  | "leaks"
+  | "fogs"
+  | "nose_pain"
+  | "too_tight"
+  | "too_loose"
+  | "facial_hair"
+  | "hard_to_equalize";
 
 export interface FaceProfile {
   faceWidth: FaceWidthCategory;
