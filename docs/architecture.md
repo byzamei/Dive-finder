@@ -11,10 +11,10 @@
 - **Supabase** — Postgres + PostGIS, Auth (magic link + optional Google
   OAuth), and Row Level Security as the actual authorization boundary
   (not just app-layer checks).
-- **Mapbox GL JS** — loaded dynamically, client-side only, behind the
+- **MapLibre GL JS** — loaded dynamically, client-side only, behind the
   `mapService` abstraction (`src/lib/services/mapService.ts` +
-  `src/components/map/`). Falls back to a list/grid view with a visible
-  notice when `NEXT_PUBLIC_MAPBOX_TOKEN` is unset.
+  `src/components/map/`), using free CARTO/OpenStreetMap basemap tiles —
+  no API key required.
 - **Vitest** — unit tests for the scoring/data-governance logic; a small
   integration suite for RLS/admin enforcement that only runs against a
   real (disposable) Supabase test project.

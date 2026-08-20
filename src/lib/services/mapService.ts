@@ -1,5 +1,3 @@
-export const isMapConfigured = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
-
 export interface MapPin {
   id: string;
   name: string;
@@ -10,11 +8,12 @@ export interface MapPin {
 }
 
 /**
- * Map provider abstraction. V1 ships a Mapbox implementation
- * (src/components/map/MapboxMap.tsx, loaded dynamically client-side only)
- * behind this file so swapping providers later (MapLibre, Google Maps)
- * touches one file. Any destination without verified coordinates is
- * excluded from `pins`, never plotted at a guessed location.
+ * Map provider abstraction. Ships a MapLibre GL implementation
+ * (src/components/map/MapLibreMap.tsx, loaded dynamically client-side
+ * only, free CARTO/OSM tiles — no API key required) behind this file so
+ * swapping providers later touches one file. Any destination without
+ * verified coordinates is excluded from `pins`, never plotted at a
+ * guessed location.
  */
 export function toPins<T extends { id: string; name: string; slug: string; latitude: number | null; longitude: number | null }>(
   items: T[]

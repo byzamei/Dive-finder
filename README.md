@@ -33,8 +33,6 @@ Fill in:
   Supabase project's Settings → API.
 - `SUPABASE_SERVICE_ROLE_KEY` — same page, **server-only**, used by the seed
   script and `create-admin` script. Never expose this in client code.
-- `NEXT_PUBLIC_MAPBOX_TOKEN` — optional (see §11). Leave blank to use the
-  built-in list/grid fallback on `/map`.
 - `NEXT_PUBLIC_SITE_URL` — `http://localhost:3000` for local dev.
 
 ## 4. Create the Supabase project
@@ -164,15 +162,13 @@ point these at production data).
 
 ## 11. Map provider configuration
 
-The map (`/map`) uses Mapbox GL JS behind a provider abstraction
-(`src/lib/services/mapService.ts`, `src/components/map/`). Get a free
-public token at [mapbox.com](https://account.mapbox.com/access-tokens/),
-set `NEXT_PUBLIC_MAPBOX_TOKEN`, redeploy. Without a token, `/map` renders a
-clearly-labeled list/grid fallback instead of an error — this is the
-required "map works or has a clear fallback" behavior, not a bug.
+The map (`/map`) uses MapLibre GL JS behind a provider abstraction
+(`src/lib/services/mapService.ts`, `src/components/map/`) with free CARTO/
+OpenStreetMap basemap tiles — no API key or signup required, it just works.
 
 Only destinations/sites with **verified** coordinates get a pin — nothing
-is plotted at a guessed location.
+is plotted at a guessed location. If a destination has no coordinates yet,
+it's simply absent from the map rather than shown at a guess.
 
 ## 12. Data Health
 
@@ -194,9 +190,6 @@ outstanding expired claims. Backed by SQL views in
 - **`npm run seed` fails with a connection error:** double-check
   `SUPABASE_SERVICE_ROLE_KEY` is set and migrations (§5) have been applied
   first — the seed script inserts into tables that must already exist.
-- **Map shows a list instead of pins:** expected without
-  `NEXT_PUBLIC_MAPBOX_TOKEN` — see §11.
-
 ## What's in V1 vs. deliberately out of scope
 
 **In V1:** destinations, dive sites, marine species, seasonality (qualitative,
