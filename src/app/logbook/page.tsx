@@ -74,11 +74,15 @@ export default async function LogbookPage() {
                 <Card>
                   <CardBody>
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-abyss-900">{siteLabel(entry)}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-abyss-900">{siteLabel(entry)}</p>
                         <p className="mt-0.5 text-xs text-abyss-500">{entry.dive_date}</p>
                       </div>
-                      {entry.rating != null && <StarRating value={entry.rating} />}
+                      {entry.rating != null && (
+                        <div className="shrink-0">
+                          <StarRating value={entry.rating} />
+                        </div>
+                      )}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-abyss-500">
                       {entry.max_depth_m != null && <span>{entry.max_depth_m}m</span>}
