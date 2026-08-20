@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { markSpeciesSeen, unmarkSpeciesSeen } from "@/lib/services/speciesSeenService";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +16,7 @@ export function SpeciesSeenToggle({
   speciesId: string;
   initialSeen: boolean;
 }) {
+  const router = useRouter();
   const [seen, setSeen] = useState(initialSeen);
   const [pending, setPending] = useState(false);
 
@@ -26,22 +28,34 @@ export function SpeciesSeenToggle({
     );
   }
 
-  async function toggle() {
+  async function unmark() {
     setPending(true);
     const supabase = createClient();
-    if (seen) {
-      await unmarkSpeciesSeen(supabase, userId!, speciesId);
-      setSeen(false);
-    } else {
-      await markSpeciesSeen(supabase, userId!, speciesId);
-      setSeen(true);
-    }
+    await unmarkSpeciesSeen(supabase, userId!, speciesId);
+    setSeen(false);
     setPending(false);
   }
 
+  // Marking as seen also returns to the Wildlife list, so checking off
+  // several animals in a row doesn't need a manual "back" each time.
+  async function markAndReturnToList() {
+    setPending(true);
+    const supabase = createClient();
+    await markSpeciesSeen(supabase, userId!, speciesId);
+    router.push("/wildlife");
+  }
+
+  if (seen) {
+    return (
+      <Button variant="secondary" size="sm" onClick={unmark} disabled={pending} type="button">
+        ✓ Seen it
+      </Button>
+    );
+  }
+
   return (
-    <Button variant={seen ? "secondary" : "outline"} size="sm" onClick={toggle} disabled={pending} type="button">
-      {seen ? "✓ Seen it" : "Mark as seen"}
+    <Button variant="outline" size="sm" onClick={markAndReturnToList} disabled={pending} type="button">
+      {pending ? "Saving…" : "Save and back to Wildlife"}
     </Button>
   );
 }

@@ -36,7 +36,10 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="font-display text-3xl text-abyss-900">{species.common_name}</h1>
+      <Link href="/wildlife" className="focus-ring text-sm text-ocean-700 hover:underline">
+        ← Wildlife
+      </Link>
+      <h1 className="mt-2 font-display text-3xl text-abyss-900">{species.common_name}</h1>
       <p className="mt-1 italic text-abyss-400">{species.scientific_name}</p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
