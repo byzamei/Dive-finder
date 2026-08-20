@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getCheapestPricePerDestination, type DestinationStartingPrice } from "@/lib/services/operatorService";
 import { formatDestinationPrice } from "@/components/results/FilteredExplorer";
+import { Badge } from "@/components/badges/Badge";
 
 interface InspirationDestination {
   id: string;
@@ -14,18 +15,29 @@ interface InspirationDestination {
   demo_data: boolean;
 }
 
+interface FeaturedSite {
+  id: string;
+  slug: string;
+  name: string;
+  site_type: string[];
+  demo_data: boolean;
+}
+
 // Booking.com-style inspiration rail under Search's first question — real
 // destinations and real prices where we have them (never fabricated), but
-// no photography: DiveFinder has no licensed destination or wildlife
-// photos yet, so a gradient + icon stands in rather than a stock photo
-// pretending to be a real place. Swap ICONS for real photo URLs once the
-// catalog has licensed images (see docs/data-governance.md — images would
-// need the same sourcing discipline as any other claim).
+// no photography: DiveFinder has no licensed destination/wildlife photos
+// yet and this sandbox's network policy blocks fetching or verifying any
+// external image/license, so a gradient + icon stands in rather than a
+// stock photo we can't confirm the rights to. Swap ICONS for real
+// `hero_image_url`/`image_url` values (already on Destination/MarineSpecies)
+// once the catalog has licensed images sourced with the same discipline as
+// any other claim — see docs/data-governance.md.
 const ICONS = [WaveIcon, FishIcon, TurtleIcon, ShellIcon];
 
 export function SearchInspiration() {
   const [destinations, setDestinations] = useState<InspirationDestination[] | null>(null);
   const [prices, setPrices] = useState<Map<string, DestinationStartingPrice>>(new Map());
+  const [featured, setFeatured] = useState<{ destination: InspirationDestination; sites: FeaturedSite[] } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -40,36 +52,53 @@ export function SearchInspiration() {
       );
       setDestinations(rows);
       setPrices(await getCheapestPricePerDestination(supabase, rows.map((d) => d.id)));
+
+      const { data: sitesData } = await supabase
+        .from("dive_sites")
+        .select("id, slug, name, site_type, demo_data, destination_id")
+        .eq("status", "published")
+        .eq("demo_data", false);
+      const sites = (sitesData ?? []) as (FeaturedSite & { destination_id: string })[];
+      const countByDestination = new Map<string, number>();
+      sites.forEach((s) => countByDestination.set(s.destination_id, (countByDestination.get(s.destination_id) ?? 0) + 1));
+      const [featuredDestinationId] = [...countByDestination.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
+      const featuredDestination = rows.find((d) => d.id === featuredDestinationId);
+      if (featuredDestination) {
+        setFeatured({
+          destination: featuredDestination,
+          sites: sites.filter((s) => s.destination_id === featuredDestinationId).slice(0, 3),
+        });
+      }
     }
     load();
   }, []);
 
   if (destinations === null) return null;
 
-  const withPrice = destinations.filter((d) => prices.has(d.id)).slice(0, 6);
-  const exploreByCountry = destinations.filter((d) => d.country).slice(0, 8);
+  const withPrice = destinations.filter((d) => prices.has(d.id)).slice(0, 3);
 
-  if (withPrice.length === 0 && exploreByCountry.length === 0) return null;
+  if (withPrice.length === 0 && !featured) return null;
 
   return (
     <div className="mt-10">
       {withPrice.length > 0 && (
         <div>
-          <h2 className="font-display text-xl text-abyss-900">Idées de dernière minute</h2>
+          <h2 className="font-display text-xl text-abyss-900">Last-minute ideas</h2>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {withPrice.map((d, i) => (
-              <InspirationCard key={d.id} destination={d} priceLabel={formatDestinationPrice(prices.get(d.id)!)} icon={ICONS[i % ICONS.length]!} />
+              <DestinationCard key={d.id} destination={d} priceLabel={formatDestinationPrice(prices.get(d.id)!)} icon={ICONS[i % ICONS.length]!} />
             ))}
           </div>
         </div>
       )}
 
-      {exploreByCountry.length > 0 && (
+      {featured && featured.sites.length > 0 && (
         <div className="mt-10">
-          <h2 className="font-display text-xl text-abyss-900">Explorez un pays en particulier</h2>
+          <h2 className="font-display text-xl text-abyss-900">Explore {featured.destination.name}</h2>
+          <p className="mt-1 text-sm text-abyss-500">A few of its real dive sites, each a different kind of dive.</p>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {exploreByCountry.map((d, i) => (
-              <InspirationCard key={d.id} destination={d} icon={ICONS[i % ICONS.length]!} />
+            {featured.sites.map((s, i) => (
+              <SiteCard key={s.id} site={s} icon={ICONS[i % ICONS.length]!} />
             ))}
           </div>
         </div>
@@ -78,7 +107,7 @@ export function SearchInspiration() {
   );
 }
 
-function InspirationCard({
+function DestinationCard({
   destination,
   priceLabel,
   icon: Icon,
@@ -99,6 +128,37 @@ function InspirationCard({
         <p className="truncate font-medium text-abyss-900">{destination.name}</p>
         {destination.country && <p className="mt-0.5 truncate text-sm text-abyss-500">{destination.country}</p>}
         {priceLabel && <p className="mt-1.5 text-sm font-semibold text-ocean-700">{priceLabel}</p>}
+      </div>
+    </Link>
+  );
+}
+
+function SiteCard({
+  site,
+  icon: Icon,
+}: {
+  site: FeaturedSite;
+  icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
+}) {
+  return (
+    <Link
+      href={`/sites/${site.slug}`}
+      className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
+    >
+      <div className="flex h-32 items-center justify-center bg-gradient-to-br from-seaglass-500 to-ocean-700 text-white/90 sm:h-36">
+        <Icon className="h-11 w-11" />
+      </div>
+      <div className="p-3.5">
+        <p className="truncate font-medium text-abyss-900">{site.name}</p>
+        {site.site_type.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {site.site_type.slice(0, 2).map((t) => (
+              <Badge key={t} tone="neutral">
+                {t.replace("_", " ")}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );
