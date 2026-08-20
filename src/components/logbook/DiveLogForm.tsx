@@ -84,7 +84,7 @@ export function DiveLogForm({
     try {
       const supabase = createClient();
       if (existing) {
-        await updateDiveLogEntry(supabase, existing.id, input);
+        await updateDiveLogEntry(supabase, userId, existing.id, input);
       } else {
         await createDiveLogEntry(supabase, userId, input);
       }

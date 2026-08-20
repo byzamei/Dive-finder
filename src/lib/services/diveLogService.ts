@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DiveLogEntry, GasType } from "@/lib/types/domain";
-import { markSpeciesSeen } from "@/lib/services/speciesSeenService";
+import { markSpeciesSeenFromDive } from "@/lib/services/speciesSeenService";
 
 export async function listDiveLogEntries(supabase: SupabaseClient, userId: string): Promise<DiveLogEntry[]> {
   const { data, error } = await supabase
@@ -58,16 +58,18 @@ function toRow(input: DiveLogEntryInput) {
   };
 }
 
-/** Inserts the entry, then marks every observed species as "seen" on the diver's life list (see docs/dive-log.md). */
+/** Inserts the entry, then marks every observed species as "seen" on the diver's life list — the logbook and the life list are the same data, not two things kept in sync by hand. */
 export async function createDiveLogEntry(supabase: SupabaseClient, userId: string, input: DiveLogEntryInput): Promise<void> {
   const { error } = await supabase.from("dive_log_entries").insert({ ...toRow(input), user_id: userId });
   if (error) throw error;
-  await Promise.all(input.speciesObserved.map((speciesId) => markSpeciesSeen(supabase, userId, speciesId, input.diveDate)));
+  await markSpeciesSeenFromDive(supabase, userId, input.speciesObserved, input.diveDate);
 }
 
-export async function updateDiveLogEntry(supabase: SupabaseClient, id: string, input: DiveLogEntryInput): Promise<void> {
+/** Updates the entry, then marks any newly-added observed species as "seen" too — editing an old entry to add a species should still land it on the life list. */
+export async function updateDiveLogEntry(supabase: SupabaseClient, userId: string, id: string, input: DiveLogEntryInput): Promise<void> {
   const { error } = await supabase.from("dive_log_entries").update(toRow(input)).eq("id", id);
   if (error) throw error;
+  await markSpeciesSeenFromDive(supabase, userId, input.speciesObserved, input.diveDate);
 }
 
 export async function deleteDiveLogEntry(supabase: SupabaseClient, id: string): Promise<void> {
