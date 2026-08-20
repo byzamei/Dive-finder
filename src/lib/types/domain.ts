@@ -135,6 +135,7 @@ export interface DiveCenter {
   name: string;
   center_type: string[];
   website: string | null;
+  notes: string | null;
   demo_data: boolean;
 }
 

@@ -45,6 +45,7 @@ export function DiveCentersSection({ centers, prices }: { centers: DiveCenter[];
                 ))}
               </div>
             )}
+            {c.notes && <p className="mt-2 text-sm text-abyss-600">{c.notes}</p>}
             <OperatorPrices prices={prices.get(c.id) ?? []} />
             {c.website && (
               <a
