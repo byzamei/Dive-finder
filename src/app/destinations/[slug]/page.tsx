@@ -10,11 +10,13 @@ import {
 } from "@/lib/services/destinationService";
 import { getIndicativePrices } from "@/lib/services/budgetService";
 import { listPublishedReviews, getUserReviewForEntity } from "@/lib/services/reviewService";
+import { listDiveCentersForDestination, listLiveaboardsForDestination, getPricesForEntities } from "@/lib/services/operatorService";
 import { Badge } from "@/components/badges/Badge";
 import { DemoDataBadge, FreshnessBadge, VerifiedAgoBadge } from "@/components/badges/DataBadges";
 import { SafetyNotice } from "@/components/SafetyNotice";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { DiveCentersSection, LiveaboardsSection } from "@/components/operators/OperatorsList";
 import { featureFlags } from "@/lib/utils/featureFlags";
 import { formatBudgetRange, monthName } from "@/lib/utils/format";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -35,11 +37,18 @@ export default async function DestinationPage({ params }: { params: { slug: stri
   const destination = await getDestinationBySlug(supabase, params.slug);
   if (!destination) notFound();
 
-  const [sites, species, claims, prices] = await Promise.all([
+  const [sites, species, claims, prices, diveCenters, liveaboards] = await Promise.all([
     getDiveSitesForDestination(supabase, destination.id),
     getSpeciesForDestination(supabase, destination.id),
     getVerifiedClaims(supabase, "destination", destination.id),
     getIndicativePrices(supabase, "destination", destination.id),
+    listDiveCentersForDestination(supabase, destination.id),
+    listLiveaboardsForDestination(supabase, destination.id),
+  ]);
+
+  const [diveCenterPrices, liveaboardPrices] = await Promise.all([
+    getPricesForEntities(supabase, "dive_center", diveCenters.map((c) => c.id)),
+    getPricesForEntities(supabase, "liveaboard", liveaboards.map((l) => l.id)),
   ]);
 
   const { data: envSeasonality } = await supabase
@@ -149,6 +158,22 @@ export default async function DestinationPage({ params }: { params: { slug: stri
         ) : (
           <p className="mt-2 text-sm italic text-abyss-400">No dive sites published for this destination yet.</p>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-display text-xl text-abyss-900">Dive centers</h2>
+        <p className="mt-1 text-xs text-abyss-400">
+          Listed alphabetically — never ranked or promoted. Booking happens on each operator&apos;s own site.
+        </p>
+        <DiveCentersSection centers={diveCenters} prices={diveCenterPrices} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-display text-xl text-abyss-900">Liveaboards</h2>
+        <p className="mt-1 text-xs text-abyss-400">
+          Listed alphabetically — never ranked or promoted. Booking happens on each operator&apos;s own site.
+        </p>
+        <LiveaboardsSection liveaboards={liveaboards} prices={liveaboardPrices} />
       </section>
 
       <section className="mt-8">

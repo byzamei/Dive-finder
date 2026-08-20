@@ -1,6 +1,6 @@
 -- DiveFinder — ALL migrations combined into one file, in order.
 -- Generated for convenience (paste-and-run once in the Supabase SQL Editor).
--- Source of truth stays supabase/migrations/0001..0013 — regenerate this file
+-- Source of truth stays supabase/migrations/0001..0014 — regenerate this file
 -- with: cat supabase/migrations/*.sql > supabase/all_migrations.sql
 
 -- DiveFinder — 0001: extensions
@@ -1017,3 +1017,7 @@ create trigger trg_dive_log_entries_updated_at before update on dive_log_entries
 -- docs/gear-mask-finder.md). Used only to surface general, non-mask-
 -- specific fit tips alongside results.
 alter table diver_profiles add column if not exists mask_fit_concerns text[] not null default '{}';
+-- DiveFinder — 0014: liveaboards need an outbound booking link, same as
+-- dive_centers already has. Without it, a real liveaboard entry has no way
+-- to send a diver to book it — see docs/operators.md.
+alter table liveaboards add column if not exists website text;

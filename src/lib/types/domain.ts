@@ -145,6 +145,7 @@ export interface Liveaboard {
   name: string;
   operator_name: string | null;
   itinerary_notes: string | null;
+  website: string | null;
   demo_data: boolean;
 }
 
