@@ -99,31 +99,20 @@ export function ReviewForm({
         <StarRatingInput value={rating} onChange={setRating} />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-xs text-abyss-500" htmlFor="dive_date">
-            Dive date
-          </label>
-          <input
-            id="dive_date"
-            type="date"
-            value={diveDate}
-            onChange={(e) => setDiveDate(e.target.value)}
-            className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-abyss-500" htmlFor="water_temp">
-            Water temp (°C)
-          </label>
-          <input
-            id="water_temp"
-            type="number"
-            value={waterTempC}
-            onChange={(e) => setWaterTempC(e.target.value)}
-            className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
-          />
-        </div>
+      <div>
+        <label className="mb-1 block text-xs text-abyss-500" htmlFor="dive_date">
+          Dive date
+        </label>
+        <input
+          id="dive_date"
+          type="date"
+          value={diveDate}
+          onChange={(e) => setDiveDate(e.target.value)}
+          className="focus-ring w-full max-w-xs rounded-lg border border-abyss-200 px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label className="mb-1 block text-xs text-abyss-500">Visibility</label>
           <Select value={visibilityBucket} onChange={(e) => setVisibilityBucket(e.target.value)}>
@@ -145,6 +134,18 @@ export function ReviewForm({
               </option>
             ))}
           </Select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-abyss-500" htmlFor="water_temp">
+            Water temp (°C)
+          </label>
+          <input
+            id="water_temp"
+            type="number"
+            value={waterTempC}
+            onChange={(e) => setWaterTempC(e.target.value)}
+            className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
+          />
         </div>
       </div>
 
