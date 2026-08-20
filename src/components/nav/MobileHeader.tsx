@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { LogoMark } from "@/components/LogoMark";
 
 // TopNav (logo + full nav) only renders at md: and up. BottomNav already
-// covers Discover/Explore/Reservations/Favorites/Account on phones, so this
+// covers Search/Explore/Reservations/Favorites/Account on phones, so this
 // menu only needs the sections that are one level under "Explore" — the
 // catalog itself (destinations + map) is already one tap away via the
 // bottom bar.

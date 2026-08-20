@@ -11,9 +11,11 @@ a choice the app didn't actually need.
 
 ## The five primary tabs
 
-1. **Discover** (`/discover`) — the search entry point, and now also the
+1. **Search** (`/search`, renamed from `/discover` — "Discover" tested as
+   an unclear label) — the scored-wizard entry point, and now also the
    effective home page (`/` redirects straight here — the marketing landing
-   page tested as pure friction with nothing on it people needed). A single
+   page tested as pure friction with nothing on it people needed). `/discover`
+   still resolves (redirects to `/search`) for any stale link. A single
    6-step scored wizard (dates → budget → level → wildlife → conditions →
    review); every step is skippable ("Skip to results" is always visible)
    so there's no need to pre-sort people into "search by animal / by date /
@@ -21,15 +23,21 @@ a choice the app didn't actually need.
    first screen and was removed because it added a decision with no real
    effect (skipping steps already gets you to the same place). Someone who
    already knows their destination just uses Explore directly.
-2. **Explore** (`/explore`) — destinations and the map used to be three
-   separate top-level pages (Destinations, Sites, Map) that were really the
-   same catalog seen three ways. Now it's one page: a destination list with
-   a List/Map toggle (the map reuses `MapView`/`MapLibreMap`), each card
-   with a "Compare" checkbox (comparing used to be its own nav item —
-   removed in favor of selecting inline, same pattern as the Results page).
-   Dive sites and Wildlife are one tap away via plain links at the bottom
-   of the page rather than competing tabs, since a destination's own page
-   already lists its sites.
+2. **Explore** (`/explore`) — a catalog, not a form. Three big tiles at the
+   top mirror how people actually think about a trip — Destinations (by
+   country/region), Animals (→ `/wildlife`), Season (reveals a month
+   picker, each month linking straight to scored `/results` for that
+   month) — the same three angles that used to gate Search's first screen,
+   now offered as entry points instead of a mandatory choice. Dive sites
+   are deliberately NOT a fourth peer tile: a destination can contain many
+   sites, so conflating "destination" and "site" as equal browsing units
+   would hide that hierarchy. Instead there's a distinctly-styled secondary
+   card ("Looking for a specific dive site instead?" → `/sites`), and every
+   destination card in the list shows its own site count. Below the tiles,
+   the destination list itself has a List/Map toggle (reusing `MapView`/
+   `MapLibreMap`) and a "Compare" checkbox per card (comparing used to be
+   its own nav item — removed in favor of selecting inline, same pattern as
+   the Results page).
 3. **Reservations** (`/reservations`) — a personal trip/booking tracker
    (upcoming/past/cancelled), Phase 1 of the booking roadmap in
    `docs/operators.md`: divers manually record trips they've booked
@@ -65,14 +73,15 @@ reasonable follow-up, not done here.
 
 ## Files
 
-- `src/components/nav/TopNav.tsx` — desktop, the 5 primary links (Discover,
+- `src/components/nav/TopNav.tsx` — desktop, the 5 primary links (Search,
   Explore, Gear, Reservations, Favorites) + Account.
 - `src/components/nav/BottomNav.tsx` — mobile, the 5 primary tabs (Gear
   doesn't get bottom-nav real estate — reachable via the mobile hamburger
   menu instead, to keep the bar from crowding).
 - `src/components/nav/MobileHeader.tsx` — mobile hamburger menu, scoped to
   what isn't already one tap away via BottomNav: Wildlife, Dive sites, Gear.
-- `src/app/explore/page.tsx` — the merged destinations+map catalog.
+- `src/app/explore/page.tsx` — the catalog: category tiles + destination
+  list/map.
 - `src/app/gear/page.tsx` — the Gear hub.
 - `src/app/destinations/page.tsx`, `src/app/sites/page.tsx`, `src/app/map/page.tsx`
   — still exist as standalone routes (nothing links here as a primary

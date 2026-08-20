@@ -65,7 +65,7 @@ function ResultsInner() {
     <main className="mx-auto max-w-4xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl text-abyss-900">Results</h1>
-        <Button variant="ghost" size="sm" onClick={() => router.push("/discover")}>
+        <Button variant="ghost" size="sm" onClick={() => router.push("/search")}>
           Refine search
         </Button>
       </div>
@@ -98,7 +98,7 @@ function ResultsInner() {
         <EmptyState
           title="No destinations match yet"
           description="Try widening your budget, accepted conditions, or removing a filter. You can also browse all destinations directly."
-          action={<ButtonLink href="/discover">Adjust search</ButtonLink>}
+          action={<ButtonLink href="/search">Adjust search</ButtonLink>}
         />
       )}
 

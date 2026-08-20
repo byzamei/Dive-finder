@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import { DiscoverWizard } from "@/components/discover/DiscoverWizard";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Discover",
-  description: "Tell us your dates, budget, level and the wildlife you want to see.",
-};
-
-export default function DiscoverPage() {
-  return <DiscoverWizard />;
+// Renamed to /search — this stub exists only so old links/bookmarks still land somewhere.
+export default function DiscoverRedirect() {
+  redirect("/search");
 }

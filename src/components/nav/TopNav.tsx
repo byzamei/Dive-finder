@@ -12,7 +12,7 @@ import { LogoMark } from "@/components/LogoMark";
 // comparing destinations are one tap from there rather than their own
 // top-level items — see docs/navigation.md.
 const items = [
-  { href: "/discover", label: "Discover" },
+  { href: "/search", label: "Search" },
   { href: "/explore", label: "Explore" },
   { href: "/gear", label: "Gear" },
   { href: "/reservations", label: "Reservations" },

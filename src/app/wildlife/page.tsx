@@ -58,7 +58,7 @@ export default async function WildlifePage({
     <main className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="font-display text-3xl text-abyss-900">Wildlife</h1>
       <p className="mt-2 text-abyss-500">
-        Browse by species, then jump into Discover with that animal pre-selected.
+        Browse by species, then find every destination that reports it.
       </p>
 
       {user && (
