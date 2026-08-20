@@ -21,32 +21,52 @@ a choice the app didn't actually need.
    so there's no need to pre-sort people into "search by animal / by date /
    by destination" before they even start — that used to be the wizard's
    first screen and was removed because it added a decision with no real
-   effect (skipping steps already gets you to the same place). Someone who
-   already knows their destination just uses Explore directly.
-2. **Explore** (`/explore`) — a Google-Flights-style split view: a filter
-   panel + scrollable list on the left, a persistent map on the right, both
-   driven by the same filter state at once (picking a month or a species
-   updates the list AND the map together — no separate "apply" step). The
-   filters are literally `SearchCriteria` — the same type and the same
-   `searchDestinations()` call the Search wizard uses — just presented flat
-   and always-visible instead of stepped, so there's one scoring/filtering
-   engine, not two that could quietly drift apart. This replaced an earlier
-   version with three big "Destinations / Animals / Season" tiles at the
-   top; the tiles mirrored the same three angles but required picking one
-   before you could see anything, where filters let all of them apply
-   together. Map pins show a price label (`from €45`) when the destination
-   has at least one real, currently-listed operator price — computed as
-   the minimum observed price across that destination's own dive centers
-   and liveaboards (`getCheapestPricePerDestination` in
-   `operatorService.ts`), never a fabricated or estimated figure; a
-   destination with no priced operator yet just shows an unlabeled pin.
-   Dive sites are deliberately not folded into this same filter/list: a
-   destination can contain many sites, so conflating them as equal
-   browsing units would hide that hierarchy. Instead there's a plain link
-   at the bottom ("Browse individual dive sites →" `/sites`), and every
-   destination card in the list shows its own site count. Each card also
-   has a "Compare" checkbox (comparing used to be its own nav item —
-   removed in favor of selecting inline, same pattern as the Results page).
+   effect (skipping steps already gets you to the same place). The first
+   step (dates) also carries a Booking.com-style inspiration rail
+   (`SearchInspiration.tsx`) — real destinations, and a real price when one
+   exists (`getCheapestPricePerDestination`), but no photography: DiveFinder
+   has no licensed destination/wildlife photos yet, so each card uses a
+   gradient + a decorative marine-life icon instead of a stock photo
+   pretending to be a real place. Submitting the wizard (or hitting "Skip
+   to results" from any step) lands on `/results`, which is the
+   Google-Flights-style split view described below, seeded with whatever
+   criteria the wizard produced.
+2. **Explore** (`/explore`) — a catalog, not a form. Three big tiles at the
+   top mirror how people actually think about a trip — Destinations (by
+   country/region), Animals (→ `/wildlife`), Season (reveals a month
+   picker, each month linking straight to scored `/results` for that
+   month) — the same three angles that used to gate Search's first screen,
+   now offered as entry points instead of a mandatory choice. Dive sites
+   are deliberately NOT a fourth peer tile: a destination can contain many
+   sites, so conflating "destination" and "site" as equal browsing units
+   would hide that hierarchy. Instead there's a distinctly-styled secondary
+   card ("Looking for a specific dive site instead?" → `/sites`), and every
+   destination card in the list shows its own site count. Below the tiles,
+   the destination list itself has a List/Map toggle (reusing `MapView`/
+   `MapLibreMap`) and a "Compare" checkbox per card (comparing used to be
+   its own nav item — removed in favor of selecting inline, same pattern as
+   the Results page). Explore stays a browsable catalog on purpose — it's
+   the "I don't know what I want yet" surface; the live-filter/map combo
+   lives on `/results` instead (see below), reached only after Search's
+   questionnaire.
+
+**`/results`** (not a primary tab — reached from Search) is the
+Google-Flights-style split view: a filter panel + scrollable list on the
+left, a persistent map on the right, both driven by the same filter state
+at once (changing a filter updates the list AND the map together, no
+"apply" step). Seeded from the criteria the Search wizard produced
+(`?c=` in the URL), then freely adjustable right there — no need to redo
+the whole questionnaire for a small change. The filters are literally
+`SearchCriteria` — the same type and the same `searchDestinations()` call
+the wizard itself uses — presented flat instead of stepped, so there's one
+scoring/filtering engine behind both screens, not two that could quietly
+drift apart. Shared between this page and nowhere else (for now) as
+`src/components/results/FilteredExplorer.tsx`. Map pins show a price
+label (`from €45`) when the destination has at least one real,
+currently-listed operator price — the minimum observed price across its
+own dive centers and liveaboards (`getCheapestPricePerDestination` in
+`operatorService.ts`), never fabricated; a destination with no priced
+operator yet just shows an unlabeled pin.
 3. **Reservations** (`/reservations`) — a personal trip/booking tracker
    (upcoming/past/cancelled), Phase 1 of the booking roadmap in
    `docs/operators.md`: divers manually record trips they've booked
@@ -89,11 +109,16 @@ reasonable follow-up, not done here.
   menu instead, to keep the bar from crowding).
 - `src/components/nav/MobileHeader.tsx` — mobile hamburger menu, scoped to
   what isn't already one tap away via BottomNav: Wildlife, Dive sites, Gear.
-- `src/app/explore/page.tsx` — the catalog: filter panel + destination
-  list/map split view.
+- `src/app/explore/page.tsx` — the catalog: category tiles + destination
+  list/map.
+- `src/app/results/page.tsx` + `src/components/results/FilteredExplorer.tsx`
+  — the live filter/map split view reached from Search.
+- `src/components/discover/SearchInspiration.tsx` — the inspiration rail
+  under Search's first step.
 - `src/app/gear/page.tsx` — the Gear hub.
 - `src/app/destinations/page.tsx`, `src/app/sites/page.tsx`, `src/app/map/page.tsx`
   — still exist as standalone routes (nothing links here as a primary
-  nav item anymore, but they're not dead: `/map` embeds inside `/explore`,
-  and the others stay reachable for anything that still deep-links them).
+  nav item anymore, but they're not dead: `/map` embeds inside both
+  `/explore` and `/results`, and the others stay reachable for anything
+  that still deep-links them).
 - `src/app/reservations/page.tsx` — the reservation/trip tracker (Phase 1).

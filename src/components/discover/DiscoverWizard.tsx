@@ -16,6 +16,7 @@ import {
 } from "./wizardOptions";
 import { encodeCriteria } from "@/lib/utils/searchParams";
 import { track } from "@/lib/analytics/analytics";
+import { SearchInspiration } from "./SearchInspiration";
 
 const STEPS = [
   {
@@ -136,6 +137,7 @@ export function DiscoverWizard() {
                     onChange={(e) => update("durationDays", e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </div>
+                <SearchInspiration />
               </div>
             )}
 
