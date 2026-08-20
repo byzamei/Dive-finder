@@ -6,8 +6,6 @@ import { getDestinationsForSpecies, getSeasonalityForSpecies, getSpeciesBySlug }
 import { SuitabilityBadge } from "@/components/badges/DataBadges";
 import { DemoDataBadge } from "@/components/badges/DataBadges";
 import { monthName } from "@/lib/utils/format";
-import { ButtonLink } from "@/components/ui/Button";
-import { encodeCriteria } from "@/lib/utils/searchParams";
 import { SpeciesSeenToggle } from "@/components/wildlife/SpeciesSeenToggle";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -42,15 +40,12 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
       <h1 className="mt-2 font-display text-3xl text-abyss-900">{species.common_name}</h1>
       <p className="mt-1 italic text-abyss-400">{species.scientific_name}</p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <ButtonLink href={`/results?c=${encodeCriteria({ speciesIds: [species.id] })}`} variant="outline" size="sm">
-          Find destinations for this species
-        </ButtonLink>
+      <div className="mt-4">
         <SpeciesSeenToggle userId={user?.id ?? null} speciesId={species.id} initialSeen={Boolean(seenRow.data)} />
       </div>
 
       <section className="mt-8">
-        <h2 className="font-display text-xl text-abyss-900">Destinations reporting this species</h2>
+        <h2 className="font-display text-xl text-abyss-900">Where to see it</h2>
         {destinations.length > 0 ? (
           <ul className="mt-3 space-y-2">
             {destinations.map((d) => (
@@ -67,7 +62,11 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
           </ul>
         ) : (
           <p className="mt-2 text-sm italic text-abyss-400">
-            No destination in DiveFinder has a verified association with this species yet.
+            No destination in DiveFinder has a verified association with this species yet — browse{" "}
+            <Link href="/explore" className="text-ocean-600 underline not-italic">
+              the full catalog
+            </Link>{" "}
+            in the meantime.
           </p>
         )}
       </section>

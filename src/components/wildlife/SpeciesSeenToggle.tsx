@@ -37,11 +37,15 @@ export function SpeciesSeenToggle({
   }
 
   // Marking as seen also returns to the Wildlife list, so checking off
-  // several animals in a row doesn't need a manual "back" each time.
+  // several animals in a row doesn't need a manual "back" each time. Stamps
+  // today's date automatically (no extra step) so "My life list" can read
+  // as a real logbook — most recently seen first — instead of a plain
+  // checklist.
   async function markAndReturnToList() {
     setPending(true);
     const supabase = createClient();
-    await markSpeciesSeen(supabase, userId!, speciesId);
+    const today = new Date().toISOString().slice(0, 10);
+    await markSpeciesSeen(supabase, userId!, speciesId, today);
     router.push("/wildlife");
   }
 

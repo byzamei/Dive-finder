@@ -32,17 +32,23 @@ export default async function WildlifePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const seenIds = new Set<string>();
+  const seenOnById = new Map<string, string | null>();
   if (user) {
-    const { data } = await supabase.from("user_species_seen").select("species_id").eq("user_id", user.id);
-    (data ?? []).forEach((r) => seenIds.add(r.species_id as string));
+    const { data } = await supabase.from("user_species_seen").select("species_id, seen_on").eq("user_id", user.id);
+    (data ?? []).forEach((r) => seenOnById.set(r.species_id as string, r.seen_on as string | null));
   }
 
   const filter = searchParams.filter === "seen" ? "seen" : "all";
   const category = CATEGORIES.some((c) => c.value === searchParams.category) ? (searchParams.category as SpeciesCategory) : null;
 
-  const byFilter = filter === "seen" ? species.filter((s) => seenIds.has(s.id)) : species;
-  const visible = category ? byFilter.filter((s) => s.category === category) : byFilter;
+  const byFilter = filter === "seen" ? species.filter((s) => seenOnById.has(s.id)) : species;
+  const byCategory = category ? byFilter.filter((s) => s.category === category) : byFilter;
+  // My life list reads as a logbook: most recently seen first. The general
+  // catalog stays alphabetical (listSpecies already orders by common_name).
+  const visible =
+    filter === "seen"
+      ? [...byCategory].sort((a, b) => (seenOnById.get(b.id) ?? "").localeCompare(seenOnById.get(a.id) ?? ""))
+      : byCategory;
 
   function withParams(overrides: { filter?: string; category?: string | null }) {
     const params = new URLSearchParams();
@@ -77,7 +83,7 @@ export default async function WildlifePage({
               filter === "seen" ? "bg-ocean-600 text-white" : "bg-abyss-100 text-abyss-700 hover:bg-abyss-200"
             }`}
           >
-            My life list ({seenIds.size})
+            My life list ({seenOnById.size})
           </Link>
         </div>
       )}
@@ -115,7 +121,9 @@ export default async function WildlifePage({
                     <p className="text-sm italic text-abyss-400">{s.scientific_name}</p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {seenIds.has(s.id) && <Badge tone="success">Seen</Badge>}
+                    {seenOnById.has(s.id) && (
+                      <Badge tone="success">{formatSeenOn(seenOnById.get(s.id) ?? null)}</Badge>
+                    )}
                     {s.category && <Badge tone="neutral">{s.category}</Badge>}
                   </div>
                 </div>
@@ -126,4 +134,9 @@ export default async function WildlifePage({
       </div>
     </main>
   );
+}
+
+function formatSeenOn(seenOn: string | null): string {
+  if (!seenOn) return "Seen";
+  return `Seen ${new Date(seenOn).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
 }
