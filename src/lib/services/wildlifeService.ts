@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Destination, MarineSpecies, SpeciesSeasonality } from "@/lib/types/domain";
+import type { Destination, DiveSite, MarineSpecies, SpeciesSeasonality } from "@/lib/types/domain";
+import type { DiveSiteWithDestination } from "@/lib/services/destinationService";
 
 export async function listSpecies(supabase: SupabaseClient): Promise<MarineSpecies[]> {
   const { data, error } = await supabase.from("marine_species").select("*").order("common_name");
@@ -23,6 +24,24 @@ export async function getDestinationsForSpecies(
     .eq("species_id", speciesId);
   if (error) throw error;
   return ((data ?? []) as unknown as { destinations: Destination }[]).map((r) => r.destinations);
+}
+
+export async function getSitesForSpecies(
+  supabase: SupabaseClient,
+  speciesId: string
+): Promise<DiveSiteWithDestination[]> {
+  const { data, error } = await supabase
+    .from("site_species")
+    .select("dive_sites(*, destinations(name, slug))")
+    .eq("species_id", speciesId);
+  if (error) throw error;
+  return (
+    (data ?? []) as unknown as { dive_sites: DiveSite & { destinations: { name: string; slug: string } | null } }[]
+  ).map((r) => ({
+    ...r.dive_sites,
+    destination_name: r.dive_sites.destinations?.name ?? "Unknown destination",
+    destination_slug: r.dive_sites.destinations?.slug ?? "",
+  }));
 }
 
 export async function getSeasonalityForSpecies(
