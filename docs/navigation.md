@@ -14,29 +14,31 @@ instead:
    were all separate top-level nav items before; they're the same content
    underneath, just different lenses on it, so they're grouped rather than
    competing for nav space.
-3. **Trips** (`/trips`) — a personal trip tracker (upcoming/past/cancelled,
-   linked to real operators). Currently a placeholder — the real version is
-   a separate build (see the "réservations" discussion in product history).
-   Deliberately distinct from **Logbook**: a trip is a booking, a logbook
-   entry is one dive; a trip can contain many dives.
-4. **Saved** (`/saved`) — favorites/named lists.
+3. **Reservations** (`/reservations`) — a personal trip/booking tracker
+   (upcoming/past/cancelled, linked to real operators). Currently a
+   placeholder — the real version is a separate build. Deliberately
+   distinct from **Logbook**: a reservation is a booking, a logbook entry
+   is one dive; a reservation can contain many dives.
+4. **Favorites** (`/saved`) — favorites/named lists. Route stayed `/saved`
+   (established, widely linked) even though the label became "Favorites";
+   `/reservations` got the matching route rename since it was brand new.
 5. **Account** (`/profile`) — identity, badges, the diver profile form, and
    the **Logbook** (linked from a card on this page, not a top-level tab —
-   it's inherently account-scoped, like Trips and Saved).
+   it's inherently account-scoped, like Reservations and Favorites).
 
 ## Soft-gating, not hiding
 
-Personal tabs (Trips, Saved, Account) stay visible and reachable to
-signed-out visitors instead of being hidden from the nav or hard-redirected
-to `/login`. Tapping in shows what the feature is and a sign-in prompt,
-rather than disappearing entirely or bouncing you away with no context —
-same reasoning as the existing soft-gates on Mask Finder's "save to
-profile" and the Wildlife life-list toggle. The nav itself becomes part of
-the pitch for creating an account, instead of hiding that pitch. `/trips`
-follows this pattern; `/saved` and `/profile` still hard-redirect via
-`requireUser()` from before this restructure — bringing them in line is a
-reasonable follow-up, not done here to keep this change scoped to
-navigation and the two new hub pages.
+Personal tabs (Reservations, Favorites, Account) stay visible and
+reachable to signed-out visitors instead of being hidden from the nav or
+hard-redirected to `/login`. Tapping in shows what the feature is and a
+sign-in prompt, rather than disappearing entirely or bouncing you away
+with no context — same reasoning as the existing soft-gates on Mask
+Finder's "save to profile" and the Wildlife life-list toggle. The nav
+itself becomes part of the pitch for creating an account, instead of
+hiding that pitch. `/reservations` follows this pattern; `/saved` and
+`/profile` still hard-redirect via `requireUser()` from before this
+restructure — bringing them in line is a reasonable follow-up, not done
+here to keep this change scoped to navigation and the two new hub pages.
 
 ## Files
 
@@ -49,4 +51,5 @@ navigation and the two new hub pages.
 - `src/app/destinations/page.tsx` — new: a real "browse all destinations"
   index, which didn't exist before (destinations were only reachable via
   search results or a species/site's back-link).
-- `src/app/trips/page.tsx` — placeholder for the future trip tracker.
+- `src/app/reservations/page.tsx` — placeholder for the future
+  reservation/trip tracker.

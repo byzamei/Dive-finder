@@ -13,8 +13,8 @@ import { LogoMark } from "@/components/LogoMark";
 const items = [
   { href: "/discover", label: "Discover" },
   { href: "/explore", label: "Explore" },
-  { href: "/trips", label: "Trips" },
-  { href: "/saved", label: "Saved" },
+  { href: "/reservations", label: "Reservations" },
+  { href: "/saved", label: "Favorites" },
 ];
 
 export function TopNav() {

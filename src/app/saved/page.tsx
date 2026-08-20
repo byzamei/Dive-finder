@@ -50,8 +50,8 @@ export default async function SavedPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="font-display text-3xl text-abyss-900">Saved</h1>
-      <p className="mt-2 text-abyss-500">Organize your saved destinations and sites into lists.</p>
+      <h1 className="font-display text-3xl text-abyss-900">Favorites</h1>
+      <p className="mt-2 text-abyss-500">Organize your favorite destinations and sites into lists.</p>
 
       <div className="mt-8">
         <SavedListsBoard userId={user!.id} initialItems={items} initialLists={lists} />

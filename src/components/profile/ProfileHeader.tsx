@@ -104,7 +104,7 @@ export function ProfileHeader({
       <div className="grid grid-cols-3 gap-3 border-t border-abyss-100 px-5 py-4 text-center sm:px-6">
         <Link href="/saved" className="focus-ring rounded-lg hover:bg-abyss-50">
           <p className="font-display text-lg text-abyss-900">{savedCount}</p>
-          <p className="text-xs text-abyss-400">Saved</p>
+          <p className="text-xs text-abyss-400">Favorites</p>
         </Link>
         <Link href="/wildlife?filter=seen" className="focus-ring rounded-lg hover:bg-abyss-50">
           <p className="font-display text-lg text-abyss-900">{speciesSeenCount}</p>
