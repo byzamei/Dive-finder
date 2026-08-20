@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { MarineSpecies, SearchCriteria } from "@/lib/types/domain";
 import { Button } from "@/components/ui/Button";
@@ -17,22 +16,6 @@ import {
 } from "./wizardOptions";
 import { encodeCriteria } from "@/lib/utils/searchParams";
 import { track } from "@/lib/analytics/analytics";
-
-type Mode = "guide" | "animal" | "destination";
-
-interface DestinationOption {
-  id: string;
-  slug: string;
-  name: string;
-  country: string | null;
-}
-
-function modeFromEntry(entry?: string): Mode | null {
-  if (entry === "animal") return "animal";
-  if (entry === "destination") return "destination";
-  if (entry === "dates") return "guide";
-  return null;
-}
 
 const STEPS = [
   {
@@ -73,10 +56,9 @@ const STEPS = [
   },
 ] as const;
 
-export function DiscoverWizard({ initialEntry }: { initialEntry?: string }) {
+export function DiscoverWizard() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode | null>(() => modeFromEntry(initialEntry));
-  const [step, setStep] = useState(initialEntry === "animal" ? 3 : 0);
+  const [step, setStep] = useState(0);
   const [criteria, setCriteria] = useState<SearchCriteria>({ currency: "EUR" });
   const [species, setSpecies] = useState<MarineSpecies[]>([]);
 
@@ -88,19 +70,6 @@ export function DiscoverWizard({ initialEntry }: { initialEntry?: string }) {
       .order("common_name")
       .then(({ data }) => setSpecies((data ?? []) as MarineSpecies[]));
   }, []);
-
-  function chooseMode(next: Mode) {
-    setMode(next);
-    setStep(next === "animal" ? 3 : 0);
-  }
-
-  if (mode === null) {
-    return <ModeSelector onChoose={chooseMode} />;
-  }
-
-  if (mode === "destination") {
-    return <DestinationLookup onChangeMode={() => setMode(null)} />;
-  }
 
   function update<K extends keyof SearchCriteria>(key: K, value: SearchCriteria[K]) {
     setCriteria((c) => ({ ...c, [key]: value }));
@@ -128,13 +97,6 @@ export function DiscoverWizard({ initialEntry }: { initialEntry?: string }) {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
-      <button
-        type="button"
-        onClick={() => setMode(null)}
-        className="focus-ring mb-4 text-sm font-medium text-ocean-600 underline"
-      >
-        ← Change how you search
-      </button>
       <StepProgress step={step} />
 
       <div className="mt-6 overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card">
@@ -344,150 +306,6 @@ export function DiscoverWizard({ initialEntry }: { initialEntry?: string }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function ModeSelector({ onChoose }: { onChoose: (mode: Mode) => void }) {
-  const options: { mode: Mode; icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element; title: string; description: string }[] = [
-    {
-      mode: "guide",
-      icon: CompassModeIcon,
-      title: "Help me find a destination",
-      description: "Answer a few questions about dates, budget, level and conditions — we'll score every destination against them.",
-    },
-    {
-      mode: "animal",
-      icon: FishIcon,
-      title: "I'm chasing an animal",
-      description: "Start from the wildlife you want to see, then narrow down by dates, budget and level.",
-    },
-    {
-      mode: "destination",
-      icon: PinModeIcon,
-      title: "I already know my destination",
-      description: "Jump straight to a destination page — dive sites, verified conditions, real operators.",
-    },
-  ];
-
-  return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="font-display text-2xl text-abyss-900">How do you want to search?</h1>
-      <p className="mt-1 text-sm text-abyss-500">Pick whichever fits how you&apos;re thinking about your next trip.</p>
-
-      <div className="mt-6 space-y-3">
-        {options.map(({ mode, icon: Icon, title, description }) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => onChoose(mode)}
-            className="focus-ring flex w-full items-start gap-3.5 rounded-xl2 border border-abyss-100 bg-white p-5 text-left shadow-card transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ocean-50 text-ocean-600">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-lg text-abyss-900">{title}</p>
-              <p className="mt-1 text-sm text-abyss-500">{description}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DestinationLookup({ onChangeMode }: { onChangeMode: () => void }) {
-  const [destinations, setDestinations] = useState<DestinationOption[] | null>(null);
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("destinations")
-      .select("id, slug, name, countries(name)")
-      .eq("status", "published")
-      .order("name")
-      .then(({ data }) => {
-        const rows = (data ?? []) as unknown as { id: string; slug: string; name: string; countries: { name: string } | null }[];
-        setDestinations(rows.map((d) => ({ id: d.id, slug: d.slug, name: d.name, country: d.countries?.name ?? null })));
-      });
-  }, []);
-
-  const filtered = (destinations ?? []).filter((d) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return d.name.toLowerCase().includes(q) || (d.country ?? "").toLowerCase().includes(q);
-  });
-
-  return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <button
-        type="button"
-        onClick={onChangeMode}
-        className="focus-ring mb-4 text-sm font-medium text-ocean-600 underline"
-      >
-        ← Change how you search
-      </button>
-
-      <h1 className="font-display text-2xl text-abyss-900">Which destination?</h1>
-      <p className="mt-1 text-sm text-abyss-500">
-        Search the catalog and jump straight to dive sites, verified conditions and real operators.
-      </p>
-
-      <input
-        type="text"
-        autoFocus
-        placeholder="e.g. Bonaire, Raja Ampat, Sipadan…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="focus-ring mt-6 w-full rounded-lg border border-abyss-200 px-4 py-2.5 text-sm"
-      />
-
-      <div className="mt-4 space-y-2">
-        {destinations === null && <p className="text-sm text-abyss-400">Loading destinations…</p>}
-        {destinations !== null && filtered.length === 0 && (
-          <p className="rounded-xl2 border border-dashed border-abyss-200 p-4 text-sm text-abyss-500">
-            No destination matches &ldquo;{query}&rdquo;. Try another spelling, or{" "}
-            <button type="button" onClick={onChangeMode} className="text-ocean-600 underline">
-              let us help you find one
-            </button>{" "}
-            instead.
-          </p>
-        )}
-        {filtered.map((d) => (
-          <Link
-            key={d.id}
-            href={`/destinations/${d.slug}`}
-            className="focus-ring flex items-center justify-between gap-3 rounded-xl2 border border-abyss-100 bg-white px-4 py-3.5 shadow-card transition-transform hover:-translate-y-0.5"
-          >
-            <div>
-              <p className="font-medium text-abyss-900">{d.name}</p>
-              {d.country && <p className="text-sm text-abyss-500">{d.country}</p>}
-            </div>
-            <span aria-hidden className="shrink-0 text-lg text-ocean-600">
-              →
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CompassModeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
-      <circle cx={12} cy={12} r={9} />
-      <path d="M15 9l-2 6-4-2 2-6 4 2z" />
-    </svg>
-  );
-}
-function PinModeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
-      <path d="M12 21s-7-6.5-7-11.5A7 7 0 0119 9.5C19 14.5 12 21 12 21Z" />
-      <circle cx={12} cy={9.5} r={2.5} />
-    </svg>
   );
 }
 

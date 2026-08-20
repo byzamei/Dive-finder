@@ -1,29 +1,35 @@
 # Navigation structure
 
-Restructured post-V1 at the product owner's request: the original nav grew
-one item at a time as features shipped (Discover, Wildlife, Map, Compare,
-Mask Finder, Sites, Logbook, Saved…) until it no longer fit comfortably and
-had no real organizing principle. The rebuild groups by **journey stage**
-instead:
+Restructured post-V1 at the product owner's request, then simplified again
+after user-testing feedback (a friend's outside review, relayed verbatim)
+found the first restructure still asked people to sort themselves into a
+category before they could do anything. The original nav had grown one
+item at a time as features shipped (Discover, Wildlife, Map, Compare, Mask
+Finder, Sites, Logbook, Saved…) until it had no organizing principle at
+all; this groups by **journey stage** and removes every screen that forced
+a choice the app didn't actually need.
 
 ## The five primary tabs
 
-1. **Discover** (`/discover`) — the search entry point. Its first screen is
-   a mode selector, not a form: "help me find a destination" (the original
-   6-step scored wizard), "I'm chasing an animal" (same wizard, starting at
-   the Wildlife step), or "I already know my destination" (a name search
-   that jumps straight to `/destinations/[slug]`, bypassing the wizard
-   entirely). The three homepage quick-cards (`?entry=dates|animal|destination`)
-   pre-select a mode and skip the selector; arriving at `/discover` directly
-   (e.g. from the nav) shows it. Rationale: the old wizard forced everyone
-   through the same dates-first linear form even when they already knew
-   their destination or just wanted to search by animal — this lets people
-   choose how they want to search instead of assuming one path fits all.
-2. **Explore** (`/explore`) — a hub page linking to every way to browse the
-   catalog: Destinations, Sites, Map, Wildlife, Compare, Mask Finder. These
-   were all separate top-level nav items before; they're the same content
-   underneath, just different lenses on it, so they're grouped rather than
-   competing for nav space.
+1. **Discover** (`/discover`) — the search entry point, and now also the
+   effective home page (`/` redirects straight here — the marketing landing
+   page tested as pure friction with nothing on it people needed). A single
+   6-step scored wizard (dates → budget → level → wildlife → conditions →
+   review); every step is skippable ("Skip to results" is always visible)
+   so there's no need to pre-sort people into "search by animal / by date /
+   by destination" before they even start — that used to be the wizard's
+   first screen and was removed because it added a decision with no real
+   effect (skipping steps already gets you to the same place). Someone who
+   already knows their destination just uses Explore directly.
+2. **Explore** (`/explore`) — destinations and the map used to be three
+   separate top-level pages (Destinations, Sites, Map) that were really the
+   same catalog seen three ways. Now it's one page: a destination list with
+   a List/Map toggle (the map reuses `MapView`/`MapLibreMap`), each card
+   with a "Compare" checkbox (comparing used to be its own nav item —
+   removed in favor of selecting inline, same pattern as the Results page).
+   Dive sites and Wildlife are one tap away via plain links at the bottom
+   of the page rather than competing tabs, since a destination's own page
+   already lists its sites.
 3. **Reservations** (`/reservations`) — a personal trip/booking tracker
    (upcoming/past/cancelled), Phase 1 of the booking roadmap in
    `docs/operators.md`: divers manually record trips they've booked
@@ -33,11 +39,17 @@ instead:
    a reservation is a booking, a logbook entry is one dive; a reservation
    can contain many dives.
 4. **Favorites** (`/saved`) — favorites/named lists. Route stayed `/saved`
-   (established, widely linked) even though the label became "Favorites";
-   `/reservations` got the matching route rename since it was brand new.
+   (established, widely linked) even though the label became "Favorites".
 5. **Account** (`/profile`) — identity, badges, the diver profile form, and
    the **Logbook** (linked from a card on this page, not a top-level tab —
    it's inherently account-scoped, like Reservations and Favorites).
+
+## Gear
+
+`/gear` is a small hub (one card today: Mask Finder) reachable from the
+main header, not buried inside Explore — gear tools aren't part of the
+destination catalog, they're a different kind of thing, and the app is
+expected to grow more of them over time.
 
 ## Soft-gating, not hiding
 
@@ -46,23 +58,24 @@ reachable to signed-out visitors instead of being hidden from the nav or
 hard-redirected to `/login`. Tapping in shows what the feature is and a
 sign-in prompt, rather than disappearing entirely or bouncing you away
 with no context — same reasoning as the existing soft-gates on Mask
-Finder's "save to profile" and the Wildlife life-list toggle. The nav
-itself becomes part of the pitch for creating an account, instead of
-hiding that pitch. `/reservations` follows this pattern; `/saved` and
-`/profile` still hard-redirect via `requireUser()` from before this
-restructure — bringing them in line is a reasonable follow-up, not done
-here to keep this change scoped to navigation and the two new hub pages.
+Finder's "save to profile" and the Wildlife life-list toggle. `/reservations`
+follows this pattern; `/saved` and `/profile` still hard-redirect via
+`requireUser()` from before this restructure — bringing them in line is a
+reasonable follow-up, not done here.
 
 ## Files
 
-- `src/components/nav/TopNav.tsx` — desktop, the 4 primary links + Account.
-- `src/components/nav/BottomNav.tsx` — mobile, all 5 primary tabs.
-- `src/components/nav/MobileHeader.tsx` — mobile hamburger menu, now scoped
-  to just the Explore sub-sections (the 5 primary tabs are always visible
-  in BottomNav, so they're not duplicated here).
-- `src/app/explore/page.tsx` — the new hub page.
-- `src/app/destinations/page.tsx` — new: a real "browse all destinations"
-  index, which didn't exist before (destinations were only reachable via
-  search results or a species/site's back-link).
-- `src/app/reservations/page.tsx` — placeholder for the future
-  reservation/trip tracker.
+- `src/components/nav/TopNav.tsx` — desktop, the 5 primary links (Discover,
+  Explore, Gear, Reservations, Favorites) + Account.
+- `src/components/nav/BottomNav.tsx` — mobile, the 5 primary tabs (Gear
+  doesn't get bottom-nav real estate — reachable via the mobile hamburger
+  menu instead, to keep the bar from crowding).
+- `src/components/nav/MobileHeader.tsx` — mobile hamburger menu, scoped to
+  what isn't already one tap away via BottomNav: Wildlife, Dive sites, Gear.
+- `src/app/explore/page.tsx` — the merged destinations+map catalog.
+- `src/app/gear/page.tsx` — the Gear hub.
+- `src/app/destinations/page.tsx`, `src/app/sites/page.tsx`, `src/app/map/page.tsx`
+  — still exist as standalone routes (nothing links here as a primary
+  nav item anymore, but they're not dead: `/map` embeds inside `/explore`,
+  and the others stay reachable for anything that still deep-links them).
+- `src/app/reservations/page.tsx` — the reservation/trip tracker (Phase 1).

@@ -24,6 +24,7 @@ export function ReviewForm({
   species: MarineSpecies[];
   existingReview: Review | null;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [rating, setRating] = useState(0);
   const [diveDate, setDiveDate] = useState("");
   const [visibilityBucket, setVisibilityBucket] = useState("");
@@ -90,6 +91,21 @@ export function ReviewForm({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="focus-ring mt-4 flex w-full items-center justify-between rounded-xl2 border border-abyss-100 p-4 text-left hover:bg-abyss-50"
+      >
+        <span className="text-sm font-medium text-abyss-800">Leave a review</span>
+        <span aria-hidden className="text-abyss-400">
+          ⌄
+        </span>
+      </button>
+    );
   }
 
   return (

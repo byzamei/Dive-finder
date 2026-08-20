@@ -7,12 +7,14 @@ import { LogoMark } from "@/components/LogoMark";
 
 // Grouped by journey stage, not by when each feature was added: search →
 // browse the catalog → track trips/dives → save for later → account.
-// Destinations/Sites/Map/Wildlife/Compare/Mask Finder all live under
-// "Explore" (a real hub page, not a dropdown) rather than as separate top-
-// level items — see docs/navigation.md.
+// Destinations and the map are one merged catalog view under "Explore"
+// (list/map toggle, not separate tabs); dive sites, wildlife, and
+// comparing destinations are one tap from there rather than their own
+// top-level items — see docs/navigation.md.
 const items = [
   { href: "/discover", label: "Discover" },
   { href: "/explore", label: "Explore" },
+  { href: "/gear", label: "Gear" },
   { href: "/reservations", label: "Reservations" },
   { href: "/saved", label: "Favorites" },
 ];

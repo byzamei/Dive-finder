@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { DiscoverWizard } from "@/components/discover/DiscoverWizard";
 
@@ -7,14 +6,6 @@ export const metadata: Metadata = {
   description: "Tell us your dates, budget, level and the wildlife you want to see.",
 };
 
-export default function DiscoverPage({
-  searchParams,
-}: {
-  searchParams: { entry?: string };
-}) {
-  return (
-    <Suspense fallback={null}>
-      <DiscoverWizard initialEntry={searchParams.entry} />
-    </Suspense>
-  );
+export default function DiscoverPage() {
+  return <DiscoverWizard />;
 }

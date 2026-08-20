@@ -7,17 +7,14 @@ import { cn } from "@/lib/utils/cn";
 import { LogoMark } from "@/components/LogoMark";
 
 // TopNav (logo + full nav) only renders at md: and up. BottomNav already
-// covers Discover/Explore/Trips/Saved/Account on phones, so this menu only
-// needs the sections one level under "Explore" — everything else is
-// already one tap away via the bottom bar.
+// covers Discover/Explore/Reservations/Favorites/Account on phones, so this
+// menu only needs the sections that are one level under "Explore" — the
+// catalog itself (destinations + map) is already one tap away via the
+// bottom bar.
 const MENU_ITEMS = [
-  { href: "/explore", label: "Explore (all)" },
-  { href: "/destinations", label: "Destinations" },
-  { href: "/sites", label: "Sites" },
   { href: "/wildlife", label: "Wildlife" },
-  { href: "/map", label: "Map" },
-  { href: "/compare", label: "Compare" },
-  { href: "/gear/mask-finder", label: "Mask Finder" },
+  { href: "/sites", label: "Dive sites" },
+  { href: "/gear", label: "Gear" },
 ];
 
 export function MobileHeader() {
