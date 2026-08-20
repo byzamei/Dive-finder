@@ -5,6 +5,9 @@ export interface MapPin {
   latitude: number;
   longitude: number;
   matchScore?: number;
+  // Real, observed operator price for this destination (never a guess) —
+  // shown as a Google-Flights-style label on the map pin itself when set.
+  priceLabel?: string;
 }
 
 /**

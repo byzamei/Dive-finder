@@ -44,7 +44,10 @@ export function MapLibreMap({ pins, onSelect }: { pins: MapPin[]; onSelect?: (pi
       mapRef.current = map;
 
       pins.forEach((pin) => {
-        const marker = new Marker({ color: "#f4703f" })
+        const marker = pin.priceLabel
+          ? new Marker({ element: priceBubbleElement(pin.priceLabel) })
+          : new Marker({ color: "#f4703f" });
+        marker
           .setLngLat([pin.longitude, pin.latitude])
           .setPopup(new Popup({ offset: 12 }).setText(pin.name))
           .addTo(map);
@@ -72,4 +75,23 @@ export function MapLibreMap({ pins, onSelect }: { pins: MapPin[]; onSelect?: (pi
   }, [pins]);
 
   return <div ref={containerRef} className="h-full w-full rounded-xl2" />;
+}
+
+// A Google-Flights-style price pill instead of a plain dot, for callers
+// that pass a real observed price (MapPin.priceLabel).
+function priceBubbleElement(priceLabel: string): HTMLDivElement {
+  const el = document.createElement("div");
+  el.textContent = priceLabel;
+  el.style.cssText = [
+    "background:#1c2b3a",
+    "color:#fff",
+    "font:600 12px system-ui,sans-serif",
+    "padding:4px 9px",
+    "border-radius:999px",
+    "box-shadow:0 1px 4px rgba(0,0,0,.35)",
+    "white-space:nowrap",
+    "cursor:pointer",
+    "border:1.5px solid #fff",
+  ].join(";");
+  return el;
 }

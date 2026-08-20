@@ -27,6 +27,58 @@ export async function listLiveaboardsForDestination(supabase: SupabaseClient, de
   return (data ?? []) as Liveaboard[];
 }
 
+export interface DestinationStartingPrice {
+  amountMin: number;
+  currency: string;
+}
+
+/**
+ * The cheapest real, currently-listed operator price per destination —
+ * the minimum `amount_min` across that destination's own dive centers and
+ * liveaboards. Never a guess or an estimate: destinations with no priced
+ * operator yet are simply absent from the returned map. Different
+ * currencies are NOT converted (no live FX rate to use honestly), so this
+ * is "cheapest as originally listed," not a normalized comparison.
+ */
+export async function getCheapestPricePerDestination(
+  supabase: SupabaseClient,
+  destinationIds: string[]
+): Promise<Map<string, DestinationStartingPrice>> {
+  if (destinationIds.length === 0) return new Map();
+
+  const [{ data: centers }, { data: liveaboards }] = await Promise.all([
+    supabase.from("dive_centers").select("id, destination_id").in("destination_id", destinationIds),
+    supabase.from("liveaboards").select("id, destination_id").in("destination_id", destinationIds),
+  ]);
+
+  const destinationByOperatorId = new Map<string, string>();
+  (centers ?? []).forEach((c) => destinationByOperatorId.set((c as { id: string }).id, (c as { destination_id: string }).destination_id));
+  (liveaboards ?? []).forEach((l) => destinationByOperatorId.set((l as { id: string }).id, (l as { destination_id: string }).destination_id));
+
+  const operatorIds = Array.from(destinationByOperatorId.keys());
+  if (operatorIds.length === 0) return new Map();
+
+  const { data: prices, error } = await supabase
+    .from("prices")
+    .select("entity_id, amount_min, currency")
+    .in("entity_type", ["dive_center", "liveaboard"])
+    .in("entity_id", operatorIds)
+    .not("amount_min", "is", null)
+    .or("expires_at.is.null,expires_at.gt." + new Date().toISOString());
+  if (error) throw error;
+
+  const cheapestByDestination = new Map<string, DestinationStartingPrice>();
+  ((prices ?? []) as { entity_id: string; amount_min: number; currency: string }[]).forEach((p) => {
+    const destinationId = destinationByOperatorId.get(p.entity_id);
+    if (!destinationId) return;
+    const current = cheapestByDestination.get(destinationId);
+    if (!current || p.amount_min < current.amountMin) {
+      cheapestByDestination.set(destinationId, { amountMin: p.amount_min, currency: p.currency });
+    }
+  });
+  return cheapestByDestination;
+}
+
 /** Indicative prices for a set of operator entities, keyed by entity_id. */
 export async function getPricesForEntities(
   supabase: SupabaseClient,
