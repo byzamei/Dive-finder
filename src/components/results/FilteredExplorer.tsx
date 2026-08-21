@@ -237,91 +237,119 @@ export function FilteredExplorer({
           </div>
         )}
 
-        <div
-          className={cn(
-            "mt-4 space-y-3 lg:max-h-[65vh] lg:overflow-y-auto lg:pr-1",
-            view === "map" && "hidden lg:block",
-          )}
-        >
-          <p className="hidden text-sm text-abyss-500 lg:block">
-            {results === null
-              ? "Loading…"
-              : `${ranked.length} destination${ranked.length === 1 ? "" : "s"} match your filters`}
-          </p>
-          {results !== null && ranked.length === 0 && (
-            <p className="rounded-xl2 border border-dashed border-abyss-200 p-4 text-sm text-abyss-500">
-              No destination matches these filters yet. Try widening budget or
-              conditions.
+        <div className="relative">
+          <div
+            className={cn(
+              "mt-4 space-y-3 lg:max-h-[65vh] lg:overflow-y-auto lg:pr-1",
+              view === "map" && "hidden lg:block",
+            )}
+          >
+            <p className="hidden text-sm text-abyss-500 lg:block">
+              {results === null
+                ? "Loading…"
+                : `${ranked.length} destination${ranked.length === 1 ? "" : "s"}, ranked by fit to what you told us — only unsafe matches are ever hidden, everything else is reordered, not removed`}
             </p>
-          )}
-          {ranked.map((r) => {
-            const d = r.destination;
-            const price = prices.get(d.id);
-            return (
-              <div
-                key={d.id}
-                className="overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card"
-              >
-                {photos.get(d.id) && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={photos.get(d.id)!.url}
-                    alt={photos.get(d.id)!.alt}
-                    className="h-28 w-full object-cover"
-                  />
-                )}
-                <div className="p-4">
-                  <Link
-                    href={`/destinations/${d.slug}`}
-                    className="focus-ring flex items-start justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-display text-lg text-abyss-900">
-                          {d.name}
+            {results !== null && ranked.length === 0 && (
+              <p className="rounded-xl2 border border-dashed border-abyss-200 p-4 text-sm text-abyss-500">
+                No destination matches these filters yet. Try widening budget or
+                conditions.
+              </p>
+            )}
+            {ranked.map((r) => {
+              const d = r.destination;
+              const price = prices.get(d.id);
+              // Only claim "over budget" when the price and the stated budget
+              // share a currency — converting across currencies without a
+              // real exchange rate would be a fabricated number, so we stay
+              // silent rather than guess (see docs/data-governance.md).
+              const overBudget =
+                price != null &&
+                criteria.budgetTotal != null &&
+                price.currency === (criteria.currency ?? "EUR") &&
+                price.amountMin > criteria.budgetTotal;
+              return (
+                <div
+                  key={d.id}
+                  className="overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card"
+                >
+                  {photos.get(d.id) && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photos.get(d.id)!.url}
+                      alt={photos.get(d.id)!.alt}
+                      className="h-28 w-full object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <Link
+                      href={`/destinations/${d.slug}`}
+                      className="focus-ring flex items-start justify-between gap-3"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-display text-lg text-abyss-900">
+                            {d.name}
+                          </p>
+                          {d.demo_data && <DemoDataBadge />}
+                        </div>
+                        {countryNames.get(d.id) && (
+                          <p className="mt-0.5 text-sm text-abyss-500">
+                            {countryNames.get(d.id)}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-abyss-400">
+                          {siteCounts.get(d.id) ?? 0} dive site
+                          {(siteCounts.get(d.id) ?? 0) === 1 ? "" : "s"}
                         </p>
-                        {d.demo_data && <DemoDataBadge />}
                       </div>
-                      {countryNames.get(d.id) && (
-                        <p className="mt-0.5 text-sm text-abyss-500">
-                          {countryNames.get(d.id)}
+                      {price && (
+                        <p className="shrink-0 text-right">
+                          <span className="font-display text-lg text-ocean-700">
+                            {formatDestinationPrice(price)}
+                          </span>
+                          {overBudget && (
+                            <Badge
+                              tone="warning"
+                              className="ml-1.5 align-middle"
+                            >
+                              Over budget
+                            </Badge>
+                          )}
                         </p>
                       )}
-                      <p className="mt-1 text-xs text-abyss-400">
-                        {siteCounts.get(d.id) ?? 0} dive site
-                        {(siteCounts.get(d.id) ?? 0) === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    {price && (
-                      <p className="shrink-0 font-display text-lg text-ocean-700">
-                        {formatDestinationPrice(price)}
-                      </p>
+                    </Link>
+                    {d.dive_type_tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {d.dive_type_tags.slice(0, 4).map((t) => (
+                          <Badge key={t} tone="neutral">
+                            {t.replace("_", " ")}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
-                  </Link>
-                  {d.dive_type_tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {d.dive_type_tags.slice(0, 4).map((t) => (
-                        <Badge key={t} tone="neutral">
-                          {t.replace("_", " ")}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  <label className="focus-ring mt-3 flex w-fit items-center gap-2 text-xs font-medium text-abyss-600">
-                    <input
-                      type="checkbox"
-                      checked={compareIds.includes(d.id)}
-                      disabled={
-                        !compareIds.includes(d.id) && compareIds.length >= 4
-                      }
-                      onChange={() => toggleCompare(d.id)}
-                    />
-                    Compare
-                  </label>
+                    <label className="focus-ring mt-3 flex w-fit items-center gap-2 text-xs font-medium text-abyss-600">
+                      <input
+                        type="checkbox"
+                        checked={compareIds.includes(d.id)}
+                        disabled={
+                          !compareIds.includes(d.id) && compareIds.length >= 4
+                        }
+                        onChange={() => toggleCompare(d.id)}
+                      />
+                      Compare
+                    </label>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 hidden h-12 rounded-b-xl2 bg-gradient-to-t from-sand-50 to-transparent lg:block",
+              view === "map" && "lg:hidden",
+            )}
+          />
         </div>
       </div>
 
