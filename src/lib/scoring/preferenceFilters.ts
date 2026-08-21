@@ -1,5 +1,6 @@
 import type { SearchCriteria } from "@/lib/types/domain";
 import type { DestinationScoringFacts } from "./types";
+import { toEur, type ExchangeRates } from "@/lib/services/exchangeRateService";
 
 export interface PreferenceFilterResult {
   excluded: boolean;
@@ -19,20 +20,30 @@ export interface PreferenceFilterResult {
  * docs/data-governance.md). Every exclusion here is because we know
  * something the searcher's own criteria rule out, never because we don't.
  */
-export function applyPreferenceFilters(facts: DestinationScoringFacts, criteria: SearchCriteria): PreferenceFilterResult {
+export function applyPreferenceFilters(
+  facts: DestinationScoringFacts,
+  criteria: SearchCriteria,
+  exchangeRates?: ExchangeRates | null
+): PreferenceFilterResult {
   const reasons: string[] = [];
 
-  // Budget: only comparable, so only excludable, when the known price and
-  // the stated budget share a currency — comparing across currencies
-  // without a real exchange rate would be a fabricated number (see the
-  // identical rule in FilteredExplorer's "Over budget" badge).
-  if (
-    criteria.budgetTotal != null &&
-    facts.indicativeBudget?.amountMin != null &&
-    facts.indicativeBudget.currency === (criteria.currency ?? "EUR") &&
-    facts.indicativeBudget.amountMin > criteria.budgetTotal
-  ) {
-    reasons.push("Cheapest known price is above the stated budget");
+  // Budget: same-currency prices compare directly. Cross-currency prices
+  // only compare when we have a real, current rate (exchangeRateService.ts
+  // — never a hardcoded/guessed factor); with no rate available for that
+  // currency, we say nothing rather than fabricate a comparison.
+  if (criteria.budgetTotal != null && facts.indicativeBudget?.amountMin != null) {
+    const { amountMin, currency } = facts.indicativeBudget;
+    const budgetCurrency = criteria.currency ?? "EUR";
+    const budgetTotal = criteria.budgetTotal;
+    let isOverBudget = false;
+    if (currency === budgetCurrency) {
+      isOverBudget = amountMin > budgetTotal;
+    } else if (exchangeRates) {
+      const priceInEur = toEur(amountMin, currency, exchangeRates);
+      const budgetInEur = toEur(budgetTotal, budgetCurrency, exchangeRates);
+      isOverBudget = priceInEur != null && budgetInEur != null && priceInEur > budgetInEur;
+    }
+    if (isOverBudget) reasons.push("Cheapest known price is above the stated budget");
   }
 
   // Dive type: only judged once the destination has any tags at all — an

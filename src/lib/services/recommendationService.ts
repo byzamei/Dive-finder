@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SearchCriteria } from "@/lib/types/domain";
 import { buildScoringFacts, listCandidateDestinations } from "./searchService";
 import { scoreAllDestinations, type ScoreAllResult } from "@/lib/scoring/scoringService";
+import { fetchExchangeRatesClient } from "@/lib/utils/clientFx";
 
 /**
  * Top-level entry point for "run a search". Orchestrates candidate
@@ -17,7 +18,12 @@ export async function searchDestinations(
   criteria: SearchCriteria,
   opts: { userId?: string | null; sessionId?: string; includeDemo?: boolean } = {}
 ): Promise<ScoreAllResult> {
-  const destinations = await listCandidateDestinations(supabase, { includeDemo: opts.includeDemo });
+  // Only fetch rates when a budget is actually set — most searches don't
+  // need them, and it's one more network round-trip to skip when idle.
+  const [destinations, exchangeRates] = await Promise.all([
+    listCandidateDestinations(supabase, { includeDemo: opts.includeDemo }),
+    criteria.budgetTotal != null ? fetchExchangeRatesClient() : Promise.resolve(null),
+  ]);
   const factsById = await buildScoringFacts(supabase, destinations);
 
   const entries = destinations
@@ -27,7 +33,7 @@ export async function searchDestinations(
     })
     .filter((e): e is { destination: (typeof destinations)[number]; facts: NonNullable<typeof e>["facts"] } => Boolean(e));
 
-  const result = scoreAllDestinations(entries, criteria);
+  const result = scoreAllDestinations(entries, criteria, exchangeRates);
 
   try {
     await supabase.from("searches").insert({

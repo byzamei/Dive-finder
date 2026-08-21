@@ -14,6 +14,7 @@ import {
   type DimensionScore,
 } from "./dimensions";
 import type { DestinationScoringFacts } from "./types";
+import type { ExchangeRates } from "@/lib/services/exchangeRateService";
 
 const DIMENSION_LABEL: Record<ScoreDimension, string> = {
   seasonality: "Seasonality",
@@ -129,10 +130,11 @@ function buildReasonsAndTradeOffs(dimensions: Record<ScoreDimension, DimensionSc
 export function scoreDestination(
   destination: Destination,
   facts: DestinationScoringFacts,
-  criteria: SearchCriteria
+  criteria: SearchCriteria,
+  exchangeRates?: ExchangeRates | null
 ): ScoredDestination & { excluded: boolean } {
   const { excluded: unsafe, warnings } = applyHardFilters(facts, criteria);
-  const { excluded: mismatched } = applyPreferenceFilters(facts, criteria);
+  const { excluded: mismatched } = applyPreferenceFilters(facts, criteria, exchangeRates);
   const excluded = unsafe || mismatched;
   const dimensions = computeDimensions(facts, criteria);
   const { matchScore, dataCompletenessPct } = aggregateScore(dimensions);
@@ -172,9 +174,10 @@ export interface ScoreAllResult {
  */
 export function scoreAllDestinations(
   entries: { destination: Destination; facts: DestinationScoringFacts }[],
-  criteria: SearchCriteria
+  criteria: SearchCriteria,
+  exchangeRates?: ExchangeRates | null
 ): ScoreAllResult {
-  const scored = entries.map(({ destination, facts }) => scoreDestination(destination, facts, criteria));
+  const scored = entries.map(({ destination, facts }) => scoreDestination(destination, facts, criteria, exchangeRates));
   const included = scored.filter((s) => !s.excluded);
   const ranked = [...included].sort((a, b) => b.matchScore - a.matchScore);
 

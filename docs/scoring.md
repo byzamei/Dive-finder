@@ -42,10 +42,15 @@ affirmatively rules it out for one of these:
 
 - **Budget**: the cheapest known price (a destination-level price if one
   exists, else the cheapest current operator price — see
-  `indicativeBudget` in `types.ts`) is above `budgetTotal`, **in the same
-  currency** as `criteria.currency`. Cross-currency prices are never
-  compared (no real exchange rate to use honestly), so they neither exclude
-  nor get flagged — see `docs/data-governance.md`.
+  `indicativeBudget` in `types.ts`) is above `budgetTotal`. Same-currency
+  prices compare directly; a price in a different currency only compares
+  when a real, current exchange rate is available (fetched live from
+  Frankfurter/ECB reference rates via `exchangeRateService.ts` — never a
+  hardcoded or estimated factor, and never shown to the user as a
+  converted price, only used internally to decide inclusion). A currency
+  the rate feed doesn't cover (e.g. the Fijian dollar isn't an ECB
+  reference currency) is never compared, so it neither excludes nor gets
+  flagged — see `docs/data-governance.md`.
 - **Dive type**: the destination has `dive_type_tags` and none of them are
   in `criteria.diveTypes`.
 - **Conditions**: `typicalCurrent` is known and not in

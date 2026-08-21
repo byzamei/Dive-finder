@@ -138,9 +138,23 @@ describe("T011 — preference filters actually exclude what the searcher asked t
     expect(reasons.length).toBeGreaterThan(0);
   });
 
-  it("never excludes for budget across different currencies — no real exchange rate to compare with", () => {
+  it("never excludes for budget across different currencies when no exchange rate is available", () => {
     const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "USD" } });
     const { excluded } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" });
+    expect(excluded).toBe(false);
+  });
+
+  it("excludes across currencies when a real exchange rate is supplied", () => {
+    const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "USD" } });
+    const rates = { base: "EUR" as const, rates: { USD: 1.1 } }; // 8000 USD ≈ 7273 EUR, well above a 300 EUR budget
+    const { excluded } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" }, rates);
+    expect(excluded).toBe(true);
+  });
+
+  it("never excludes across currencies when the rate feed has no entry for that currency", () => {
+    const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "FJD" } });
+    const rates = { base: "EUR" as const, rates: { USD: 1.1 } }; // no FJD entry
+    const { excluded } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" }, rates);
     expect(excluded).toBe(false);
   });
 
