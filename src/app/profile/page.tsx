@@ -1,12 +1,33 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { DiverProfileForm } from "@/components/profile/DiverProfileForm";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ButtonLink } from "@/components/ui/Button";
 import type { CertificationAgency, Certification, DiverProfile, MarineSpecies, Profile } from "@/lib/types/domain";
 
+// Soft-gated like /reservations and /feed: the tab stays visible and
+// useful-looking to signed-out visitors instead of hard-redirecting.
 export default async function ProfilePage() {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return (
+      <main className="mx-auto max-w-2xl px-6 py-10">
+        <h1 className="font-display text-3xl text-abyss-900">Profile</h1>
+        <div className="mt-8 rounded-xl2 border border-abyss-100 bg-sand-100 p-6 text-center">
+          <p className="font-medium text-abyss-800">Sign in to view your profile</p>
+          <p className="mt-1 text-sm text-abyss-500">
+            Your profile personalizes search results and tracks your logbook, life list and mask fit.
+          </p>
+          <ButtonLink href="/login?redirectTo=/profile" className="mt-4">
+            Sign in
+          </ButtonLink>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = await createClient();
 
   const [

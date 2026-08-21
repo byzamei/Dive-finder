@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { computeDiveLogStats, listDiveLogEntries } from "@/lib/services/diveLogService";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -14,8 +14,29 @@ export const metadata: Metadata = {
   description: "Your personal dive log — private by default, shareable one dive at a time.",
 };
 
+// Soft-gated like /reservations and /feed: the tab stays visible and
+// useful-looking to signed-out visitors instead of hard-redirecting.
 export default async function LogbookPage() {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-10">
+        <h1 className="font-display text-3xl text-abyss-900">Logbook</h1>
+        <p className="mt-2 text-abyss-500">Private by default — share individual dives from their own page if you want to.</p>
+        <div className="mt-8 rounded-xl2 border border-abyss-100 bg-sand-100 p-6 text-center">
+          <p className="font-medium text-abyss-800">Sign in to keep a logbook</p>
+          <p className="mt-1 text-sm text-abyss-500">
+            Once you&apos;re signed in, you can log dives — species you log are added to your life list.
+          </p>
+          <ButtonLink href="/login?redirectTo=/logbook" className="mt-4">
+            Sign in
+          </ButtonLink>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = await createClient();
   const entries = await listDiveLogEntries(supabase, user.id);
   const stats = computeDiveLogStats(entries);
