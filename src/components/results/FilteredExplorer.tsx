@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { MarineSpecies, SearchCriteria } from "@/lib/types/domain";
@@ -228,14 +228,7 @@ function FiltersPanel({
       <div>
         <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-abyss-400">Budget</p>
         <div className="flex gap-2">
-          <input
-            type="number"
-            min={0}
-            placeholder="e.g. 2000"
-            value={criteria.budgetTotal ?? ""}
-            onChange={(e) => update("budgetTotal", e.target.value ? Number(e.target.value) : undefined)}
-            className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
-          />
+          <BudgetInput budgetTotal={criteria.budgetTotal} onChange={(v) => update("budgetTotal", v)} />
           <select
             value={criteria.currency ?? "EUR"}
             onChange={(e) => update("currency", e.target.value)}
@@ -304,5 +297,40 @@ function FiltersPanel({
         </div>
       </details>
     </div>
+  );
+}
+
+// Every criteria change re-queries Supabase (see FilteredExplorer's effect
+// on [criteria]), which is fine for a single click (a Chip) but would fire
+// a query per keystroke for a free-typed number. Local state keeps typing
+// instant; the commit into criteria — and so the search — waits until 400ms
+// after the last keystroke.
+const BUDGET_DEBOUNCE_MS = 400;
+
+function BudgetInput({ budgetTotal, onChange }: { budgetTotal: number | undefined; onChange: (value: number | undefined) => void }) {
+  const [input, setInput] = useState(budgetTotal != null ? String(budgetTotal) : "");
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const timeout = setTimeout(() => {
+      onChange(input ? Number(input) : undefined);
+    }, BUDGET_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input]);
+
+  return (
+    <input
+      type="number"
+      min={0}
+      placeholder="e.g. 2000"
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
+    />
   );
 }
