@@ -20,6 +20,7 @@ import { DiveCentersSection, LiveaboardsSection } from "@/components/operators/O
 import { featureFlags } from "@/lib/utils/featureFlags";
 import { formatBudgetRange, monthName } from "@/lib/utils/format";
 import { Card, CardBody } from "@/components/ui/Card";
+import { searchDestinationPhoto } from "@/lib/services/photoService";
 import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -37,13 +38,14 @@ export default async function DestinationPage({ params }: { params: { slug: stri
   const destination = await getDestinationBySlug(supabase, params.slug);
   if (!destination) notFound();
 
-  const [sites, species, claims, prices, diveCenters, liveaboards] = await Promise.all([
+  const [sites, species, claims, prices, diveCenters, liveaboards, photo] = await Promise.all([
     getDiveSitesForDestination(supabase, destination.id),
     getSpeciesForDestination(supabase, destination.id),
     getVerifiedClaims(supabase, "destination", destination.id),
     getIndicativePrices(supabase, "destination", destination.id),
     listDiveCentersForDestination(supabase, destination.id),
     listLiveaboardsForDestination(supabase, destination.id),
+    destination.demo_data ? Promise.resolve(null) : searchDestinationPhoto(`${destination.name} scuba diving`),
   ]);
 
   const [diveCenterPrices, liveaboardPrices] = await Promise.all([
@@ -69,6 +71,20 @@ export default async function DestinationPage({ params }: { params: { slug: stri
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
+      {photo && (
+        <figure className="mb-6 overflow-hidden rounded-xl2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo.url} alt={photo.alt} className="h-56 w-full object-cover sm:h-72" />
+          <figcaption className="mt-1.5 text-right text-xs text-abyss-400">
+            Photo by{" "}
+            <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-abyss-600">
+              {photo.photographer}
+            </a>{" "}
+            on Pexels
+          </figcaption>
+        </figure>
+      )}
+
       <div className="mb-4 flex items-center gap-2">
         <h1 className="font-display text-3xl text-abyss-900">{destination.name}</h1>
         {destination.demo_data && <DemoDataBadge />}

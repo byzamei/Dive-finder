@@ -23,21 +23,36 @@ interface FeaturedSite {
   demo_data: boolean;
 }
 
+interface CardPhoto {
+  url: string;
+  alt: string;
+}
+
 // Booking.com-style inspiration rail under Search's first question — real
-// destinations and real prices where we have them (never fabricated), but
-// no photography: DiveFinder has no licensed destination/wildlife photos
-// yet and this sandbox's network policy blocks fetching or verifying any
-// external image/license, so a gradient + icon stands in rather than a
-// stock photo we can't confirm the rights to. Swap ICONS for real
-// `hero_image_url`/`image_url` values (already on Destination/MarineSpecies)
-// once the catalog has licensed images sourced with the same discipline as
-// any other claim — see docs/data-governance.md.
+// destinations and real prices where we have them (never fabricated).
+// Photos come from /api/photo (Pexels, fetched server-side so the API key
+// never reaches the browser — see src/lib/services/photoService.ts). If
+// that route returns nothing (no PEXELS_API_KEY configured yet, or the
+// request failed), each card falls back to its gradient + icon instead of
+// leaving a broken image.
 const ICONS = [WaveIcon, FishIcon, TurtleIcon, ShellIcon];
+
+async function fetchPhoto(query: string): Promise<CardPhoto | null> {
+  try {
+    const res = await fetch(`/api/photo?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return null;
+    const { photo } = (await res.json()) as { photo: { url: string; alt: string } | null };
+    return photo;
+  } catch {
+    return null;
+  }
+}
 
 export function SearchInspiration() {
   const [destinations, setDestinations] = useState<InspirationDestination[] | null>(null);
   const [prices, setPrices] = useState<Map<string, DestinationStartingPrice>>(new Map());
   const [featured, setFeatured] = useState<{ destination: InspirationDestination; sites: FeaturedSite[] } | null>(null);
+  const [photos, setPhotos] = useState<Map<string, CardPhoto>>(new Map());
 
   useEffect(() => {
     const supabase = createClient();
@@ -51,7 +66,8 @@ export function SearchInspiration() {
         (d) => ({ id: d.id, slug: d.slug, name: d.name, country: d.countries?.name ?? null, demo_data: d.demo_data })
       );
       setDestinations(rows);
-      setPrices(await getCheapestPricePerDestination(supabase, rows.map((d) => d.id)));
+      const priceMap = await getCheapestPricePerDestination(supabase, rows.map((d) => d.id));
+      setPrices(priceMap);
 
       const { data: sitesData } = await supabase
         .from("dive_sites")
@@ -63,12 +79,24 @@ export function SearchInspiration() {
       sites.forEach((s) => countByDestination.set(s.destination_id, (countByDestination.get(s.destination_id) ?? 0) + 1));
       const [featuredDestinationId] = [...countByDestination.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
       const featuredDestination = rows.find((d) => d.id === featuredDestinationId);
+      let featuredSites: FeaturedSite[] = [];
       if (featuredDestination) {
-        setFeatured({
-          destination: featuredDestination,
-          sites: sites.filter((s) => s.destination_id === featuredDestinationId).slice(0, 3),
-        });
+        featuredSites = sites.filter((s) => s.destination_id === featuredDestinationId).slice(0, 3);
+        setFeatured({ destination: featuredDestination, sites: featuredSites });
       }
+
+      const withPrice = rows.filter((d) => priceMap.has(d.id)).slice(0, 3);
+      const photoQueries: { key: string; query: string }[] = [
+        ...withPrice.map((d) => ({ key: d.id, query: `${d.name} scuba diving` })),
+        ...featuredSites.map((s) => ({ key: s.id, query: `${s.name} diving` })),
+      ];
+      const fetched = await Promise.all(photoQueries.map((q) => fetchPhoto(q.query)));
+      const photoMap = new Map<string, CardPhoto>();
+      photoQueries.forEach((q, i) => {
+        const photo = fetched[i];
+        if (photo) photoMap.set(q.key, photo);
+      });
+      setPhotos(photoMap);
     }
     load();
   }, []);
@@ -86,7 +114,13 @@ export function SearchInspiration() {
           <h2 className="font-display text-xl text-abyss-900">Last-minute ideas</h2>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {withPrice.map((d, i) => (
-              <DestinationCard key={d.id} destination={d} priceLabel={formatDestinationPrice(prices.get(d.id)!)} icon={ICONS[i % ICONS.length]!} />
+              <DestinationCard
+                key={d.id}
+                destination={d}
+                priceLabel={formatDestinationPrice(prices.get(d.id)!)}
+                icon={ICONS[i % ICONS.length]!}
+                photo={photos.get(d.id)}
+              />
             ))}
           </div>
         </div>
@@ -98,7 +132,7 @@ export function SearchInspiration() {
           <p className="mt-1 text-sm text-abyss-500">A few of its real dive sites, each a different kind of dive.</p>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {featured.sites.map((s, i) => (
-              <SiteCard key={s.id} site={s} icon={ICONS[i % ICONS.length]!} />
+              <SiteCard key={s.id} site={s} icon={ICONS[i % ICONS.length]!} photo={photos.get(s.id)} />
             ))}
           </div>
         </div>
@@ -111,19 +145,26 @@ function DestinationCard({
   destination,
   priceLabel,
   icon: Icon,
+  photo,
 }: {
   destination: InspirationDestination;
   priceLabel?: string;
   icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
+  photo?: CardPhoto;
 }) {
   return (
     <Link
       href={`/destinations/${destination.slug}`}
       className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex h-32 items-center justify-center bg-gradient-to-br from-ocean-600 to-seaglass-500 text-white/90 sm:h-36">
-        <Icon className="h-11 w-11" />
-      </div>
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo.url} alt={photo.alt} className="h-32 w-full object-cover sm:h-36" />
+      ) : (
+        <div className="flex h-32 items-center justify-center bg-gradient-to-br from-ocean-600 to-seaglass-500 text-white/90 sm:h-36">
+          <Icon className="h-11 w-11" />
+        </div>
+      )}
       <div className="p-3.5">
         <p className="truncate font-medium text-abyss-900">{destination.name}</p>
         {destination.country && <p className="mt-0.5 truncate text-sm text-abyss-500">{destination.country}</p>}
@@ -136,18 +177,25 @@ function DestinationCard({
 function SiteCard({
   site,
   icon: Icon,
+  photo,
 }: {
   site: FeaturedSite;
   icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
+  photo?: CardPhoto;
 }) {
   return (
     <Link
       href={`/sites/${site.slug}`}
       className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex h-32 items-center justify-center bg-gradient-to-br from-seaglass-500 to-ocean-700 text-white/90 sm:h-36">
-        <Icon className="h-11 w-11" />
-      </div>
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo.url} alt={photo.alt} className="h-32 w-full object-cover sm:h-36" />
+      ) : (
+        <div className="flex h-32 items-center justify-center bg-gradient-to-br from-seaglass-500 to-ocean-700 text-white/90 sm:h-36">
+          <Icon className="h-11 w-11" />
+        </div>
+      )}
       <div className="p-3.5">
         <p className="truncate font-medium text-abyss-900">{site.name}</p>
         {site.site_type.length > 0 && (
