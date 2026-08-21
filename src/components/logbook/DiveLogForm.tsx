@@ -102,10 +102,16 @@ export function DiveLogForm({
   async function handleDelete() {
     if (!existing) return;
     setDeleting(true);
-    const supabase = createClient();
-    await deleteDiveLogEntry(supabase, existing.id);
-    router.push("/logbook");
-    router.refresh();
+    setError(null);
+    try {
+      const supabase = createClient();
+      await deleteDiveLogEntry(supabase, existing.id);
+      router.push("/logbook");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete this entry");
+      setDeleting(false);
+    }
   }
 
   return (

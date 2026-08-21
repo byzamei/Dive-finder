@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listReservations } from "@/lib/services/reservationService";
+import { listPublishedDestinations } from "@/lib/services/destinationService";
 import { ReservationsBoard } from "@/components/reservations/ReservationsBoard";
 import { ButtonLink } from "@/components/ui/Button";
 
@@ -50,12 +51,15 @@ export default async function ReservationsPage() {
 
 async function ReservationsBoardData({ userId }: { userId: string }) {
   const supabase = await createClient();
-  const [reservations, { data: destinationRows }] = await Promise.all([
+  const [reservations, allDestinations] = await Promise.all([
     listReservations(supabase, userId),
-    supabase.from("destinations").select("id, slug, name").eq("status", "published").order("name"),
+    // Demo destinations are excluded by default (see listPublishedDestinations)
+    // — a reservation tracks a real trip, so there's nothing to book against
+    // an illustrative-only destination.
+    listPublishedDestinations(supabase),
   ]);
 
-  const destinations = (destinationRows ?? []) as { id: string; slug: string; name: string }[];
+  const destinations = allDestinations.map((d) => ({ id: d.id, slug: d.slug, name: d.name }));
 
   return <ReservationsBoard userId={userId} initialReservations={reservations} destinations={destinations} />;
 }

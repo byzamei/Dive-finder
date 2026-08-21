@@ -42,9 +42,14 @@ export function DivePhotoManager({ userId, entryId }: { userId: string; entryId:
   }
 
   async function handleDelete(photo: DiveLogPhoto) {
-    const supabase = createClient();
-    await deleteDivePhoto(supabase, photo);
-    await refresh();
+    setError(null);
+    try {
+      const supabase = createClient();
+      await deleteDivePhoto(supabase, photo);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't remove that photo");
+    }
   }
 
   return (

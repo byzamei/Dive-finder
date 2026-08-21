@@ -47,6 +47,7 @@ export function ReservationsBoard({
   const [reservations, setReservations] = useState(initialReservations);
   const [tab, setTab] = useState<ReservationBucket>("upcoming");
   const [showForm, setShowForm] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const groups: Record<ReservationBucket, Reservation[]> = { upcoming: [], past: [], cancelled: [] };
@@ -61,21 +62,42 @@ export function ReservationsBoard({
   }
 
   async function handleCancel(id: string) {
+    const previous = reservations;
     setReservations((rs) => rs.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r)));
-    const supabase = createClient();
-    await setReservationStatus(supabase, id, "cancelled");
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      await setReservationStatus(supabase, id, "cancelled");
+    } catch (err) {
+      setReservations(previous);
+      setActionError(err instanceof Error ? err.message : "Couldn't cancel this reservation");
+    }
   }
 
   async function handleReactivate(id: string) {
+    const previous = reservations;
     setReservations((rs) => rs.map((r) => (r.id === id ? { ...r, status: "confirmed" } : r)));
-    const supabase = createClient();
-    await setReservationStatus(supabase, id, "confirmed");
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      await setReservationStatus(supabase, id, "confirmed");
+    } catch (err) {
+      setReservations(previous);
+      setActionError(err instanceof Error ? err.message : "Couldn't restore this reservation");
+    }
   }
 
   async function handleDelete(id: string) {
+    const previous = reservations;
     setReservations((rs) => rs.filter((r) => r.id !== id));
-    const supabase = createClient();
-    await deleteReservation(supabase, id);
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      await deleteReservation(supabase, id);
+    } catch (err) {
+      setReservations(previous);
+      setActionError(err instanceof Error ? err.message : "Couldn't delete this reservation");
+    }
   }
 
   const visible = grouped[tab];
@@ -107,6 +129,8 @@ export function ReservationsBoard({
           <NewReservationForm userId={userId} destinations={destinations} onCreated={handleAdd} />
         </div>
       )}
+
+      {actionError && <p className="mt-4 text-sm text-coral-600">{actionError}</p>}
 
       {visible.length === 0 ? (
         <div className="mt-6">
