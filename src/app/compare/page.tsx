@@ -3,8 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Destination, MarineSpecies, Price } from "@/lib/types/domain";
+import type { Destination, MarineSpecies } from "@/lib/types/domain";
 import { listPublishedDestinations } from "@/lib/services/destinationService";
+import { getCheapestPricePerDestination, type DestinationStartingPrice } from "@/lib/services/operatorService";
 import { ConfidenceBadge, DemoDataBadge } from "@/components/badges/DataBadges";
 import { formatBudgetRange } from "@/lib/utils/format";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,7 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 interface CompareRow {
   destination: Destination;
   species: MarineSpecies[];
-  price: Price | null;
+  price: DestinationStartingPrice | null;
 }
 
 function CompareInner() {
@@ -34,15 +35,15 @@ function CompareInner() {
     }
     const supabase = createClient();
     async function load() {
-      const [{ data: destinations }, { data: species }, { data: prices }] = await Promise.all([
+      const [{ data: destinations }, { data: species }, priceByDest] = await Promise.all([
         supabase.from("destinations").select("*").in("id", ids),
         supabase.from("destination_species").select("destination_id, marine_species(*)").in("destination_id", ids),
-        supabase
-          .from("prices")
-          .select("*")
-          .eq("entity_type", "destination")
-          .in("entity_id", ids)
-          .or("expires_at.is.null,expires_at.gt." + new Date().toISOString()),
+        // Real price data lives on operators (dive_centers / liveaboards),
+        // essentially never on the destination row directly — the same gap
+        // fixed in searchService.ts's indicativeBudget. Querying
+        // entity_type='destination' here left this row showing "Unknown"
+        // for every destination that actually has a real, priced operator.
+        getCheapestPricePerDestination(supabase, ids),
       ]);
 
       const speciesByDest = new Map<string, MarineSpecies[]>();
@@ -51,9 +52,6 @@ function CompareInner() {
         list.push(row.marine_species);
         speciesByDest.set(row.destination_id, list);
       });
-
-      const priceByDest = new Map<string, Price>();
-      (prices as Price[] | null)?.forEach((p) => priceByDest.set(p.entity_id, p));
 
       setRows(
         ids
@@ -144,8 +142,8 @@ function CompareInner() {
                 cells={rows.map((r) => (r.species.length ? r.species.map((s) => s.common_name).join(", ") : "Unknown"))}
               />
               <CompareRowLine
-                label="Indicative budget"
-                cells={rows.map((r) => (r.price ? formatBudgetRange(r.price.amount_min, r.price.amount_max, r.price.currency) : "Unknown"))}
+                label="Cheapest known price"
+                cells={rows.map((r) => (r.price ? formatBudgetRange(r.price.amountMin, null, r.price.currency) : "Unknown"))}
               />
               <tr>
                 <td className="px-3 py-2 font-medium text-abyss-500">Data confidence</td>

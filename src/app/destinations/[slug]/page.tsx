@@ -8,17 +8,16 @@ import {
   getSpeciesForDestination,
   getVerifiedClaims,
 } from "@/lib/services/destinationService";
-import { getIndicativePrices } from "@/lib/services/budgetService";
 import { listPublishedReviews, getUserReviewForEntity } from "@/lib/services/reviewService";
 import { listDiveCentersForDestination, listLiveaboardsForDestination, getPricesForEntities } from "@/lib/services/operatorService";
 import { Badge } from "@/components/badges/Badge";
-import { DemoDataBadge, FreshnessBadge, VerifiedAgoBadge } from "@/components/badges/DataBadges";
+import { DemoDataBadge, VerifiedAgoBadge, FreshnessBadge } from "@/components/badges/DataBadges";
 import { SafetyNotice } from "@/components/SafetyNotice";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { DiveCentersSection, LiveaboardsSection } from "@/components/operators/OperatorsList";
 import { featureFlags } from "@/lib/utils/featureFlags";
-import { formatBudgetRange, monthName } from "@/lib/utils/format";
+import { monthName } from "@/lib/utils/format";
 import { Card, CardBody } from "@/components/ui/Card";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
 import type { MarineSpecies } from "@/lib/types/domain";
@@ -38,11 +37,10 @@ export default async function DestinationPage({ params }: { params: { slug: stri
   const destination = await getDestinationBySlug(supabase, params.slug);
   if (!destination) notFound();
 
-  const [sites, species, claims, prices, diveCenters, liveaboards, photo] = await Promise.all([
+  const [sites, species, claims, diveCenters, liveaboards, photo] = await Promise.all([
     getDiveSitesForDestination(supabase, destination.id),
     getSpeciesForDestination(supabase, destination.id),
     getVerifiedClaims(supabase, "destination", destination.id),
-    getIndicativePrices(supabase, "destination", destination.id),
     listDiveCentersForDestination(supabase, destination.id),
     listLiveaboardsForDestination(supabase, destination.id),
     destination.demo_data ? Promise.resolve(null) : searchDestinationPhoto(`${destination.name} scuba diving`),
@@ -190,28 +188,6 @@ export default async function DestinationPage({ params }: { params: { slug: stri
           Listed alphabetically — never ranked or promoted. Booking happens on each operator&apos;s own site.
         </p>
         <LiveaboardsSection liveaboards={liveaboards} prices={liveaboardPrices} />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="font-display text-xl text-abyss-900">Indicative budget</h2>
-        {prices.length > 0 ? (
-          <ul className="mt-3 space-y-2">
-            {prices.map((p) => (
-              <li key={p.id} className="flex items-center justify-between rounded-lg border border-abyss-100 px-4 py-3 text-sm">
-                <div>
-                  <p className="font-medium text-abyss-900">{p.price_type.replace("_", " ")}</p>
-                  <p className="text-abyss-500">{p.provider ?? "Provider unspecified"}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatBudgetRange(p.amount_min, p.amount_max, p.currency)}</p>
-                  <FreshnessBadge expiresAt={p.expires_at} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm italic text-abyss-400">No current price data available.</p>
-        )}
       </section>
 
       <section className="mt-8">
