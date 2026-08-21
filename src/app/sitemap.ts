@@ -2,7 +2,11 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Strip a trailing slash — NEXT_PUBLIC_SITE_URL is easy to enter with one
+// (e.g. copy-pasted straight from a browser address bar), and every route
+// below is built as `${SITE_URL}${path}` with a leading slash already in
+// path, so an untrimmed trailing slash would double up into "//".
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 const STATIC_ROUTES = ["", "/search", "/explore", "/gear", "/gear/mask-finder", "/map", "/sites", "/wildlife"];
 

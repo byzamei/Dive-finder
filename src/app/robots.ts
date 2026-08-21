@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Strip a trailing slash — see sitemap.ts for why.
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 // Personal/gated pages (saved, profile, logbook, reservations, feed) and
 // query-driven pages with no canonical single URL (results, compare) are
