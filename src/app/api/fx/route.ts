@@ -6,6 +6,6 @@ import { fetchExchangeRates } from "@/lib/services/exchangeRateService";
 // exchangeRateService.ts) instead of hitting Frankfurter directly on every
 // search.
 export async function GET() {
-  const rates = await fetchExchangeRates();
-  return NextResponse.json({ rates });
+  const { rates, error } = await fetchExchangeRates();
+  return NextResponse.json({ rates, error });
 }

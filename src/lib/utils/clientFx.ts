@@ -12,7 +12,8 @@ export async function fetchExchangeRatesClient(): Promise<ExchangeRates | null> 
   try {
     const res = await fetch("/api/fx");
     if (!res.ok) return null;
-    const { rates } = (await res.json()) as { rates: ExchangeRates | null };
+    const { rates, error } = (await res.json()) as { rates: ExchangeRates | null; error?: string };
+    if (!rates && error) console.warn("Exchange rate fetch failed, budget filter will only compare same-currency prices:", error);
     return rates;
   } catch {
     return null;
