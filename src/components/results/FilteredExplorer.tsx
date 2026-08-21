@@ -331,7 +331,7 @@ export function FilteredExplorer({
           view === "list" && "hidden lg:block",
         )}
       >
-        <MapView pins={pins} />
+        <MapView pins={pins} hideListOnLg />
       </div>
     </div>
   );
