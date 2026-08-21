@@ -89,13 +89,26 @@ function CompareInner() {
           <option value="" disabled>
             Add a destination…
           </option>
-          {allDestinations
-            .filter((d) => !ids.includes(d.id))
-            .map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
+          <optgroup label="Destinations">
+            {allDestinations
+              .filter((d) => !d.demo_data && !ids.includes(d.id))
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+          </optgroup>
+          {allDestinations.some((d) => d.demo_data && !ids.includes(d.id)) && (
+            <optgroup label="Demo — illustrative only, not a real place">
+              {allDestinations
+                .filter((d) => d.demo_data && !ids.includes(d.id))
+                .map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} (Demo)
+                  </option>
+                ))}
+            </optgroup>
+          )}
         </select>
       )}
 
