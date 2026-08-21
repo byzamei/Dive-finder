@@ -13,6 +13,7 @@ import { DemoDataBadge } from "@/components/badges/DataBadges";
 import { ButtonLink } from "@/components/ui/Button";
 import { MapView } from "@/components/map/MapView";
 import { cn } from "@/lib/utils/cn";
+import { fetchPhoto, type CardPhoto } from "@/lib/utils/clientPhoto";
 
 // A catalog, not a form: three big entry points mirror how people actually
 // think about a trip (where / what animal / when) — the same three angles
@@ -60,6 +61,7 @@ function groupByContinentAndCountry(destinations: DestinationRow[]) {
 export default function ExplorePage() {
   const [destinations, setDestinations] = useState<DestinationRow[] | null>(null);
   const [siteCounts, setSiteCounts] = useState<Map<string, number>>(new Map());
+  const [photos, setPhotos] = useState<Map<string, CardPhoto>>(new Map());
   const [view, setView] = useState<"list" | "map">("list");
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [seasonOpen, setSeasonOpen] = useState(false);
@@ -71,7 +73,19 @@ export default function ExplorePage() {
       .select("*, countries(name, continent)")
       .eq("status", "published")
       .order("name")
-      .then(({ data }) => setDestinations((data ?? []) as unknown as DestinationRow[]));
+      .then(async ({ data }) => {
+        const rows = (data ?? []) as unknown as DestinationRow[];
+        setDestinations(rows);
+        const fetched = await Promise.all(
+          rows.filter((d) => !d.demo_data).map((d) => fetchPhoto(`${d.name} scuba diving`))
+        );
+        const photoMap = new Map<string, CardPhoto>();
+        rows.filter((d) => !d.demo_data).forEach((d, i) => {
+          const photo = fetched[i];
+          if (photo) photoMap.set(d.id, photo);
+        });
+        setPhotos(photoMap);
+      });
     supabase
       .from("dive_sites")
       .select("destination_id")
@@ -203,6 +217,7 @@ export default function ExplorePage() {
                               checked={compareIds.includes(d.id)}
                               compareDisabled={!compareIds.includes(d.id) && compareIds.length >= 4}
                               onToggleCompare={() => toggleCompare(d.id)}
+                              photo={photos.get(d.id)}
                             />
                           ))}
                         </div>
@@ -225,15 +240,21 @@ function DestinationCard({
   checked,
   compareDisabled,
   onToggleCompare,
+  photo,
 }: {
   destination: DestinationRow;
   siteCount: number;
   checked: boolean;
   compareDisabled: boolean;
   onToggleCompare: () => void;
+  photo?: CardPhoto;
 }) {
   return (
     <Card>
+      {photo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo.url} alt={photo.alt} className="h-32 w-full rounded-t-xl2 object-cover" />
+      )}
       <CardBody>
         <Link href={`/destinations/${d.slug}`} className="focus-ring block">
           <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getCheapestPricePerDestination, type DestinationStartingPrice } from "@/lib/services/operatorService";
 import { formatDestinationPrice } from "@/components/results/FilteredExplorer";
 import { Badge } from "@/components/badges/Badge";
+import { fetchPhoto, type CardPhoto } from "@/lib/utils/clientPhoto";
 
 interface InspirationDestination {
   id: string;
@@ -23,11 +24,6 @@ interface FeaturedSite {
   demo_data: boolean;
 }
 
-interface CardPhoto {
-  url: string;
-  alt: string;
-}
-
 // Booking.com-style inspiration rail under Search's first question — real
 // destinations and real prices where we have them (never fabricated).
 // Photos come from /api/photo (Pexels, fetched server-side so the API key
@@ -36,17 +32,6 @@ interface CardPhoto {
 // request failed), each card falls back to its gradient + icon instead of
 // leaving a broken image.
 const ICONS = [WaveIcon, FishIcon, TurtleIcon, ShellIcon];
-
-async function fetchPhoto(query: string): Promise<CardPhoto | null> {
-  try {
-    const res = await fetch(`/api/photo?q=${encodeURIComponent(query)}`);
-    if (!res.ok) return null;
-    const { photo } = (await res.json()) as { photo: { url: string; alt: string } | null };
-    return photo;
-  } catch {
-    return null;
-  }
-}
 
 export function SearchInspiration() {
   const [destinations, setDestinations] = useState<InspirationDestination[] | null>(null);
