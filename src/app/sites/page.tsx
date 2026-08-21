@@ -6,6 +6,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Pagination } from "@/components/ui/Pagination";
 import { SitesFilterBar } from "@/components/sites/SitesFilterBar";
+import { searchDestinationPhoto, type DestinationPhoto } from "@/lib/services/photoService";
 import type { AccessType } from "@/lib/types/domain";
 
 export const metadata: Metadata = {
@@ -33,6 +34,13 @@ export default async function SitesPage({
     listPublishedDestinations(supabase),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const photoEntries = await Promise.all(
+    visible
+      .filter((s) => !s.demo_data)
+      .map(async (s) => [s.id, await searchDestinationPhoto(`${s.name} ${s.destination_name} diving`)] as const)
+  );
+  const photoById = new Map<string, DestinationPhoto | null>(photoEntries);
 
   function buildHref(nextPage: number) {
     const params = new URLSearchParams();
@@ -63,6 +71,14 @@ export default async function SitesPage({
           {visible.map((site) => (
             <Link key={site.id} href={`/sites/${site.slug}`} className="focus-ring block">
               <Card>
+                {photoById.get(site.id) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoById.get(site.id)!.url}
+                    alt={photoById.get(site.id)!.alt}
+                    className="h-32 w-full rounded-t-xl2 object-cover"
+                  />
+                )}
                 <CardBody>
                   <p className="font-display text-lg text-abyss-900">{site.name}</p>
                   <p className="mt-0.5 text-sm text-abyss-500">{site.destination_name}</p>

@@ -10,6 +10,7 @@ import { SafetyNotice } from "@/components/SafetyNotice";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { featureFlags } from "@/lib/utils/featureFlags";
+import { searchDestinationPhoto } from "@/lib/services/photoService";
 import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -28,17 +29,42 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: destination }, claims, { data: siteSpecies }, reviews, userReview, { data: allSpecies }] = await Promise.all([
-    supabase.from("destinations").select("id, name, slug").eq("id", site.destination_id).maybeSingle(),
+  // Fetched first (not in the Promise.all below) so its name can sharpen
+  // the photo search query — many site names alone are ambiguous or shared
+  // across destinations (e.g. more than one "Manta Point").
+  const { data: destination } = await supabase
+    .from("destinations")
+    .select("id, name, slug")
+    .eq("id", site.destination_id)
+    .maybeSingle();
+
+  const [claims, { data: siteSpecies }, reviews, userReview, { data: allSpecies }, photo] = await Promise.all([
     getVerifiedClaims(supabase, "dive_site", site.id),
     supabase.from("site_species").select("marine_species(id, slug, common_name)").eq("site_id", site.id),
     listPublishedReviews(supabase, "site", site.id),
     user ? getUserReviewForEntity(supabase, user.id, "site", site.id) : Promise.resolve(null),
     supabase.from("marine_species").select("*").order("common_name"),
+    site.demo_data
+      ? Promise.resolve(null)
+      : searchDestinationPhoto(`${site.name}${destination ? ` ${destination.name}` : ""} diving`),
   ]);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
+      {photo && (
+        <figure className="mb-6 overflow-hidden rounded-xl2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo.url} alt={photo.alt} className="h-48 w-full object-cover sm:h-60" />
+          <figcaption className="mt-1.5 text-right text-xs text-abyss-400">
+            Photo by{" "}
+            <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-abyss-600">
+              {photo.photographer}
+            </a>{" "}
+            on Pexels
+          </figcaption>
+        </figure>
+      )}
+
       {destination && (
         <Link href={`/destinations/${destination.slug}`} className="focus-ring text-sm text-ocean-700 hover:underline">
           ← {destination.name}

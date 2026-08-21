@@ -9,6 +9,7 @@ import { getCheapestPricePerDestination, type DestinationStartingPrice } from "@
 import { ConfidenceBadge, DemoDataBadge } from "@/components/badges/DataBadges";
 import { formatBudgetRange } from "@/lib/utils/format";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { fetchPhoto, type CardPhoto } from "@/lib/utils/clientPhoto";
 
 interface CompareRow {
   destination: Destination;
@@ -22,6 +23,7 @@ function CompareInner() {
   const ids = (searchParams.get("ids") ?? "").split(",").filter(Boolean);
   const [rows, setRows] = useState<CompareRow[] | null>(null);
   const [allDestinations, setAllDestinations] = useState<Destination[]>([]);
+  const [photos, setPhotos] = useState<Map<string, CardPhoto>>(new Map());
 
   useEffect(() => {
     const supabase = createClient();
@@ -53,16 +55,28 @@ function CompareInner() {
         speciesByDest.set(row.destination_id, list);
       });
 
-      setRows(
-        ids
-          .map((id) => (destinations as Destination[] | null)?.find((d) => d.id === id))
-          .filter((d): d is Destination => Boolean(d))
-          .map((destination) => ({
-            destination,
-            species: speciesByDest.get(destination.id) ?? [],
-            price: priceByDest.get(destination.id) ?? null,
-          }))
-      );
+      const nextRows = ids
+        .map((id) => (destinations as Destination[] | null)?.find((d) => d.id === id))
+        .filter((d): d is Destination => Boolean(d))
+        .map((destination) => ({
+          destination,
+          species: speciesByDest.get(destination.id) ?? [],
+          price: priceByDest.get(destination.id) ?? null,
+        }));
+      setRows(nextRows);
+
+      const toFetch = nextRows.filter((r) => !r.destination.demo_data && !photos.has(r.destination.id));
+      if (toFetch.length > 0) {
+        const fetched = await Promise.all(toFetch.map((r) => fetchPhoto(`${r.destination.name} scuba diving`)));
+        setPhotos((prev) => {
+          const next = new Map(prev);
+          toFetch.forEach((r, i) => {
+            const photo = fetched[i];
+            if (photo) next.set(r.destination.id, photo);
+          });
+          return next;
+        });
+      }
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,6 +138,14 @@ function CompareInner() {
                 <th className="text-left text-abyss-400"> </th>
                 {rows.map((r) => (
                   <th key={r.destination.id} className="px-3 text-left">
+                    {photos.get(r.destination.id) && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photos.get(r.destination.id)!.url}
+                        alt={photos.get(r.destination.id)!.alt}
+                        className="mb-2 h-20 w-full rounded-lg object-cover"
+                      />
+                    )}
                     <div className="flex items-center gap-1 font-display text-base text-abyss-900">
                       {r.destination.name}
                       {r.destination.demo_data && <DemoDataBadge />}
