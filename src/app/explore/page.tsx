@@ -23,7 +23,38 @@ import { cn } from "@/lib/utils/cn";
 // (not a fourth peer tile), and each destination card shows its site
 // count to keep that hierarchy visible.
 interface DestinationRow extends Destination {
-  countries: { name: string } | null;
+  countries: { name: string; continent: string | null } | null;
+}
+
+// Continents in the order LiveAboard.com's own destination directory uses
+// them — matches how divers scan a region list, not alphabetical.
+const CONTINENT_ORDER = ["Asia", "Europe", "Africa & Middle East", "Americas", "Pacific"];
+const OTHER_CONTINENT = "Other";
+
+function groupByContinentAndCountry(destinations: DestinationRow[]) {
+  const byContinent = new Map<string, Map<string, DestinationRow[]>>();
+  for (const d of destinations) {
+    const continent = d.countries?.continent ?? OTHER_CONTINENT;
+    const country = d.countries?.name ?? "Unknown";
+    if (!byContinent.has(continent)) byContinent.set(continent, new Map());
+    const byCountry = byContinent.get(continent)!;
+    if (!byCountry.has(country)) byCountry.set(country, []);
+    byCountry.get(country)!.push(d);
+  }
+  const continents = [...byContinent.keys()].sort((a, b) => {
+    const ai = CONTINENT_ORDER.indexOf(a);
+    const bi = CONTINENT_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+  return continents.map((continent) => ({
+    continent,
+    countries: [...byContinent.get(continent)!.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([country, dests]) => ({ country, destinations: dests })),
+  }));
 }
 
 export default function ExplorePage() {
@@ -37,7 +68,7 @@ export default function ExplorePage() {
     const supabase = createClient();
     supabase
       .from("destinations")
-      .select("*, countries(name)")
+      .select("*, countries(name, continent)")
       .eq("status", "published")
       .order("name")
       .then(({ data }) => setDestinations((data ?? []) as unknown as DestinationRow[]));
@@ -59,6 +90,7 @@ export default function ExplorePage() {
   }
 
   const pins: MapPin[] = useMemo(() => (destinations ? toPins(destinations) : []), [destinations]);
+  const grouped = useMemo(() => (destinations ? groupByContinentAndCountry(destinations) : []), [destinations]);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -154,46 +186,79 @@ export default function ExplorePage() {
           ) : view === "map" ? (
             <MapView pins={pins} />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {destinations.map((d) => (
-                <Card key={d.id}>
-                  <CardBody>
-                    <Link href={`/destinations/${d.slug}`} className="focus-ring block">
-                      <div className="flex items-center gap-2">
-                        <p className="font-display text-lg text-abyss-900">{d.name}</p>
-                        {d.demo_data && <DemoDataBadge />}
-                      </div>
-                      {d.countries?.name && <p className="mt-0.5 text-sm text-abyss-500">{d.countries.name}</p>}
-                      <p className="mt-1 text-xs text-abyss-400">
-                        {siteCounts.get(d.id) ?? 0} dive site{(siteCounts.get(d.id) ?? 0) === 1 ? "" : "s"}
-                      </p>
-                      {d.dive_type_tags.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {d.dive_type_tags.map((t) => (
-                            <Badge key={t} tone="neutral">
-                              {t.replace("_", " ")}
-                            </Badge>
+            <div className="space-y-8">
+              {grouped.map(({ continent, countries }) => (
+                <div key={continent}>
+                  <h3 className="font-display text-lg text-ocean-700">{continent}</h3>
+                  <div className="mt-3 space-y-5">
+                    {countries.map(({ country, destinations: dests }) => (
+                      <div key={country}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-abyss-400">{country}</p>
+                        <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                          {dests.map((d) => (
+                            <DestinationCard
+                              key={d.id}
+                              destination={d}
+                              siteCount={siteCounts.get(d.id) ?? 0}
+                              checked={compareIds.includes(d.id)}
+                              compareDisabled={!compareIds.includes(d.id) && compareIds.length >= 4}
+                              onToggleCompare={() => toggleCompare(d.id)}
+                            />
                           ))}
                         </div>
-                      )}
-                    </Link>
-                    <label className="focus-ring mt-3 flex w-fit items-center gap-2 text-xs font-medium text-abyss-600">
-                      <input
-                        type="checkbox"
-                        checked={compareIds.includes(d.id)}
-                        disabled={!compareIds.includes(d.id) && compareIds.length >= 4}
-                        onChange={() => toggleCompare(d.id)}
-                      />
-                      Compare
-                    </label>
-                  </CardBody>
-                </Card>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
     </main>
+  );
+}
+
+function DestinationCard({
+  destination: d,
+  siteCount,
+  checked,
+  compareDisabled,
+  onToggleCompare,
+}: {
+  destination: DestinationRow;
+  siteCount: number;
+  checked: boolean;
+  compareDisabled: boolean;
+  onToggleCompare: () => void;
+}) {
+  return (
+    <Card>
+      <CardBody>
+        <Link href={`/destinations/${d.slug}`} className="focus-ring block">
+          <div className="flex items-center gap-2">
+            <p className="font-display text-lg text-abyss-900">{d.name}</p>
+            {d.demo_data && <DemoDataBadge />}
+          </div>
+          <p className="mt-1 text-xs text-abyss-400">
+            {siteCount} dive site{siteCount === 1 ? "" : "s"}
+          </p>
+          {d.dive_type_tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {d.dive_type_tags.map((t) => (
+                <Badge key={t} tone="neutral">
+                  {t.replace("_", " ")}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </Link>
+        <label className="focus-ring mt-3 flex w-fit items-center gap-2 text-xs font-medium text-abyss-600">
+          <input type="checkbox" checked={checked} disabled={compareDisabled} onChange={onToggleCompare} />
+          Compare
+        </label>
+      </CardBody>
+    </Card>
   );
 }
 
