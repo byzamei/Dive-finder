@@ -15,6 +15,8 @@ const MENU_ITEMS = [
   { href: "/wildlife", label: "Wildlife" },
   { href: "/sites", label: "Dive sites" },
   { href: "/gear", label: "Gear" },
+  { href: "/feed", label: "Feed" },
+  { href: "/divers", label: "Divers" },
 ];
 
 export function MobileHeader() {

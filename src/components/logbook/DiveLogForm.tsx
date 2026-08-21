@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createDiveLogEntry, deleteDiveLogEntry, updateDiveLogEntry } from "@/lib/services/diveLogService";
-import type { DiveLogEntry, GasType, MarineSpecies } from "@/lib/types/domain";
+import type { DiveLogEntry, GasType, MarineSpecies, Visibility } from "@/lib/types/domain";
 import type { DiveSiteWithDestination } from "@/lib/services/destinationService";
 import { Select } from "@/components/ui/Select";
 import { Chip } from "@/components/discover/Chip";
 import { StarRatingInput } from "@/components/reviews/StarRating";
 import { Button } from "@/components/ui/Button";
 import { VISIBILITY_BUCKETS, CURRENT_LEVELS } from "@/components/discover/wizardOptions";
+import { DivePhotoManager } from "@/components/logbook/DivePhotoManager";
 
 const GAS_TYPES: { value: GasType; label: string }[] = [
   { value: "air", label: "Air" },
@@ -45,6 +46,7 @@ export function DiveLogForm({
   const [speciesObserved, setSpeciesObserved] = useState<string[]>(existing?.species_observed ?? []);
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [shareVisibility, setShareVisibility] = useState<Visibility>(existing?.visibility ?? "private");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export function DiveLogForm({
       speciesObserved,
       rating: rating || null,
       notes: notes || null,
+      visibility: shareVisibility,
     };
     try {
       const supabase = createClient();
@@ -286,6 +289,20 @@ export function DiveLogForm({
           className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-2 text-sm"
         />
       </div>
+
+      <div className="rounded-xl2 border border-abyss-100 bg-sand-100 p-4">
+        <label className="mb-1 block text-sm font-medium text-abyss-800">Who can see this dive</label>
+        <Select value={shareVisibility} onChange={(e) => setShareVisibility(e.target.value as Visibility)}>
+          <option value="private">Private — just you (default)</option>
+          <option value="followers">Followers</option>
+          <option value="public">Public — anyone</option>
+        </Select>
+        <p className="mt-1.5 text-xs text-abyss-500">
+          Stays private unless you change this. Only this dive is affected — the rest of your logbook keeps its own setting.
+        </p>
+      </div>
+
+      {existing && <DivePhotoManager userId={userId} entryId={existing.id} />}
 
       {error && <p className="text-sm text-coral-600">{error}</p>}
 

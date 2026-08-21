@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DiveLogEntry, GasType } from "@/lib/types/domain";
+import type { DiveLogEntry, GasType, Visibility } from "@/lib/types/domain";
 import { markSpeciesSeenFromDive } from "@/lib/services/speciesSeenService";
 
 export async function listDiveLogEntries(supabase: SupabaseClient, userId: string): Promise<DiveLogEntry[]> {
@@ -35,6 +35,7 @@ export interface DiveLogEntryInput {
   speciesObserved: string[];
   rating: number | null;
   notes: string | null;
+  visibility: Visibility;
 }
 
 function toRow(input: DiveLogEntryInput) {
@@ -55,6 +56,7 @@ function toRow(input: DiveLogEntryInput) {
     species_observed: input.speciesObserved,
     rating: input.rating,
     notes: input.notes,
+    visibility: input.visibility,
   };
 }
 

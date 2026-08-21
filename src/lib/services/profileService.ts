@@ -10,7 +10,7 @@ export async function getProfile(supabase: SupabaseClient, userId: string): Prom
 export async function updateProfile(
   supabase: SupabaseClient,
   userId: string,
-  patch: Partial<Pick<Profile, "display_name" | "bio" | "home_base" | "avatar_url">>
+  patch: Partial<Pick<Profile, "display_name" | "bio" | "home_base" | "avatar_url" | "profile_visibility">>
 ): Promise<void> {
   const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
   if (error) throw error;

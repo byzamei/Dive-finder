@@ -1,6 +1,6 @@
 -- DiveFinder — ALL migrations combined into one file, in order.
 -- Generated for convenience (paste-and-run once in the Supabase SQL Editor).
--- Source of truth stays supabase/migrations/0001..0017 — regenerate this file
+-- Source of truth stays supabase/migrations/0001..0020 — regenerate this file
 -- with: cat supabase/migrations/*.sql > supabase/all_migrations.sql
 
 -- DiveFinder — 0001: extensions
@@ -1085,3 +1085,201 @@ create policy reservations_owner_all on reservations
 drop trigger if exists trg_reservations_updated_at on reservations;
 create trigger trg_reservations_updated_at before update on reservations
   for each row execute function set_updated_at();
+-- DiveFinder — 0018: social graph foundation (follow, public profiles,
+-- per-entry logbook visibility).
+--
+-- The Logbook has always promised "private, never shared publicly" — that
+-- promise stays true for existing and future entries by default:
+-- dive_log_entries.visibility defaults to 'private', so nothing becomes
+-- visible to anyone else unless the diver explicitly changes it on that
+-- entry. Profile-level visibility (name/bio/badges/aggregate stats, never
+-- individual dive content) defaults to 'public' instead — closer to how
+-- Strava's athlete profiles work, and there is no existing "always
+-- private" promise attached to the profile page the way there is for the
+-- Logbook.
+
+alter table profiles add column if not exists profile_visibility text not null default 'public'
+  check (profile_visibility in ('public', 'followers', 'private'));
+
+alter table dive_log_entries add column if not exists visibility text not null default 'private'
+  check (visibility in ('public', 'followers', 'private'));
+
+create table if not exists follows (
+  id uuid primary key default gen_random_uuid(),
+  follower_id uuid not null references profiles(id) on delete cascade,
+  followee_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (follower_id, followee_id),
+  check (follower_id <> followee_id)
+);
+
+create index if not exists idx_follows_follower on follows(follower_id);
+create index if not exists idx_follows_followee on follows(followee_id);
+
+alter table follows enable row level security;
+
+-- The follow graph itself (who follows whom) is not sensitive the way an
+-- individual dive's notes are — readable by anyone, same as follower/
+-- following counts on any social app. Only the follower can create/remove
+-- their own follow.
+drop policy if exists follows_public_read on follows;
+create policy follows_public_read on follows for select using (true);
+
+drop policy if exists follows_owner_insert on follows;
+create policy follows_owner_insert on follows for insert with check (follower_id = auth.uid());
+
+drop policy if exists follows_owner_delete on follows;
+create policy follows_owner_delete on follows for delete using (follower_id = auth.uid());
+
+-- ── Extra, additive read policies (existing owner-only policies on
+--    profiles/dive_log_entries are untouched — Postgres OR's permissive
+--    policies together, so the owner keeps full access regardless). ──────
+
+drop policy if exists profiles_visibility_read on profiles;
+create policy profiles_visibility_read on profiles
+  for select using (
+    profile_visibility = 'public'
+    or (profile_visibility = 'followers' and exists (
+      select 1 from follows f where f.follower_id = auth.uid() and f.followee_id = profiles.id
+    ))
+  );
+
+drop policy if exists dive_log_entries_visibility_read on dive_log_entries;
+create policy dive_log_entries_visibility_read on dive_log_entries
+  for select using (
+    visibility = 'public'
+    or (visibility = 'followers' and exists (
+      select 1 from follows f where f.follower_id = auth.uid() and f.followee_id = dive_log_entries.user_id
+    ))
+  );
+
+-- Shared visibility check, reused by kudos/comments/photos RLS so the rule
+-- lives in exactly one place instead of being copy-pasted per table.
+create or replace function can_view_dive_entry(entry_id uuid) returns boolean as $$
+  select exists (
+    select 1 from dive_log_entries e
+    where e.id = entry_id
+      and (
+        e.user_id = auth.uid()
+        or e.visibility = 'public'
+        or (e.visibility = 'followers' and exists (
+          select 1 from follows f where f.follower_id = auth.uid() and f.followee_id = e.user_id
+        ))
+        or is_admin()
+      )
+  );
+$$ language sql stable security definer set search_path = public;
+-- DiveFinder — 0019: kudos + comments on shared dive log entries.
+-- Only reachable at all once a dive is shared (visibility != 'private'),
+-- enforced via can_view_dive_entry() from 0018 — reused rather than
+-- re-deriving the same rule per table.
+
+create table if not exists dive_kudos (
+  id uuid primary key default gen_random_uuid(),
+  dive_log_entry_id uuid not null references dive_log_entries(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (dive_log_entry_id, user_id)
+);
+
+create index if not exists idx_dive_kudos_entry on dive_kudos(dive_log_entry_id);
+
+alter table dive_kudos enable row level security;
+
+drop policy if exists dive_kudos_read on dive_kudos;
+create policy dive_kudos_read on dive_kudos
+  for select using (can_view_dive_entry(dive_log_entry_id));
+
+drop policy if exists dive_kudos_insert on dive_kudos;
+create policy dive_kudos_insert on dive_kudos
+  for insert with check (user_id = auth.uid() and can_view_dive_entry(dive_log_entry_id));
+
+drop policy if exists dive_kudos_delete on dive_kudos;
+create policy dive_kudos_delete on dive_kudos
+  for delete using (user_id = auth.uid());
+
+create table if not exists dive_comments (
+  id uuid primary key default gen_random_uuid(),
+  dive_log_entry_id uuid not null references dive_log_entries(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 1000),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_dive_comments_entry on dive_comments(dive_log_entry_id, created_at);
+
+alter table dive_comments enable row level security;
+
+drop policy if exists dive_comments_read on dive_comments;
+create policy dive_comments_read on dive_comments
+  for select using (can_view_dive_entry(dive_log_entry_id));
+
+drop policy if exists dive_comments_insert on dive_comments;
+create policy dive_comments_insert on dive_comments
+  for insert with check (user_id = auth.uid() and can_view_dive_entry(dive_log_entry_id));
+
+drop policy if exists dive_comments_delete on dive_comments;
+create policy dive_comments_delete on dive_comments
+  for delete using (user_id = auth.uid() or is_admin());
+-- DiveFinder — 0020: dive log photos.
+--
+-- Unlike avatars (0011 — a public bucket, always visible), a dive photo's
+-- visibility must follow its dive_log_entry's own privacy setting: a
+-- photo on a private entry must not be fetchable by anyone else, even by
+-- guessing/sharing the storage URL. So this bucket is NOT public, and the
+-- read policy re-checks can_view_dive_entry() (from 0018) against the
+-- entry_id encoded in the storage path, same rule as the row-level table.
+--
+-- Path convention: dive-photos/{user_id}/{dive_log_entry_id}/{filename}
+-- — the first segment enforces upload ownership, the second lets the read
+-- policy find the right entry to check visibility against.
+
+create table if not exists dive_log_photos (
+  id uuid primary key default gen_random_uuid(),
+  dive_log_entry_id uuid not null references dive_log_entries(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  storage_path text not null unique,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_dive_log_photos_entry on dive_log_photos(dive_log_entry_id);
+
+alter table dive_log_photos enable row level security;
+
+drop policy if exists dive_log_photos_read on dive_log_photos;
+create policy dive_log_photos_read on dive_log_photos
+  for select using (can_view_dive_entry(dive_log_entry_id));
+
+drop policy if exists dive_log_photos_owner_insert on dive_log_photos;
+create policy dive_log_photos_owner_insert on dive_log_photos
+  for insert with check (user_id = auth.uid());
+
+drop policy if exists dive_log_photos_owner_delete on dive_log_photos;
+create policy dive_log_photos_owner_delete on dive_log_photos
+  for delete using (user_id = auth.uid() or is_admin());
+
+insert into storage.buckets (id, name, public)
+values ('dive-photos', 'dive-photos', false)
+on conflict (id) do nothing;
+
+drop policy if exists dive_photos_owner_write on storage.objects;
+create policy dive_photos_owner_write on storage.objects
+  for insert with check (
+    bucket_id = 'dive-photos' and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists dive_photos_owner_delete on storage.objects;
+create policy dive_photos_owner_delete on storage.objects
+  for delete using (
+    bucket_id = 'dive-photos' and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists dive_photos_visibility_read on storage.objects;
+create policy dive_photos_visibility_read on storage.objects
+  for select using (
+    bucket_id = 'dive-photos'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or can_view_dive_entry(((storage.foldername(name))[2])::uuid)
+    )
+  );

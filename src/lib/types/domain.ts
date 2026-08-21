@@ -250,6 +250,8 @@ export interface AdminReviewQueueItem {
   created_at: ISODateString;
 }
 
+export type Visibility = "public" | "followers" | "private";
+
 export interface Profile {
   id: UUID;
   email: string | null;
@@ -258,6 +260,7 @@ export interface Profile {
   bio: string | null;
   home_base: string | null;
   role: "user" | "admin";
+  profile_visibility: Visibility;
   created_at: ISODateString;
 }
 
@@ -346,8 +349,39 @@ export interface DiveLogEntry {
   species_observed: UUID[];
   rating: number | null;
   notes: string | null;
+  visibility: Visibility;
   created_at: ISODateString;
   updated_at: ISODateString;
+}
+
+export interface Follow {
+  id: UUID;
+  follower_id: UUID;
+  followee_id: UUID;
+  created_at: ISODateString;
+}
+
+export interface DiveKudo {
+  id: UUID;
+  dive_log_entry_id: UUID;
+  user_id: UUID;
+  created_at: ISODateString;
+}
+
+export interface DiveComment {
+  id: UUID;
+  dive_log_entry_id: UUID;
+  user_id: UUID;
+  body: string;
+  created_at: ISODateString;
+}
+
+export interface DiveLogPhoto {
+  id: UUID;
+  dive_log_entry_id: UUID;
+  user_id: UUID;
+  storage_path: string;
+  created_at: ISODateString;
 }
 
 export type ReservationStatus = "confirmed" | "cancelled";

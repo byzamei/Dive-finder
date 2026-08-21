@@ -34,6 +34,7 @@ export function ProfileHeader({
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
   const [homeBase, setHomeBase] = useState(profile.home_base ?? "");
+  const [profileVisibility, setProfileVisibility] = useState(profile.profile_visibility);
   const [saving, setSaving] = useState(false);
 
   const badges = computeBadges({ diverProfile, savedCount, speciesSeenCount, divesLoggedCount });
@@ -41,7 +42,12 @@ export function ProfileHeader({
   async function save() {
     setSaving(true);
     const supabase = createClient();
-    await updateProfile(supabase, userId, { display_name: displayName || null, bio: bio || null, home_base: homeBase || null });
+    await updateProfile(supabase, userId, {
+      display_name: displayName || null,
+      bio: bio || null,
+      home_base: homeBase || null,
+      profile_visibility: profileVisibility,
+    });
     setSaving(false);
     setEditing(false);
   }
@@ -76,6 +82,21 @@ export function ProfileHeader({
                 rows={2}
                 className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-1.5 text-sm"
               />
+              <div>
+                <label className="mb-1 block text-xs text-abyss-500">Who can see your profile</label>
+                <select
+                  value={profileVisibility}
+                  onChange={(e) => setProfileVisibility(e.target.value as typeof profileVisibility)}
+                  className="focus-ring w-full rounded-lg border border-abyss-200 px-3 py-1.5 text-sm"
+                >
+                  <option value="public">Public — anyone</option>
+                  <option value="followers">Followers only</option>
+                  <option value="private">Private — just you</option>
+                </select>
+                <p className="mt-1 text-xs text-abyss-400">
+                  This only covers your name/bio/stats. Individual dives stay private unless you share them from the Logbook.
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={save} disabled={saving}>
                   {saving ? "Saving…" : "Save"}
@@ -119,6 +140,18 @@ export function ProfileHeader({
       <div className="border-t border-abyss-100 px-5 py-4 sm:px-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-abyss-400">Badges</p>
         <BadgeGrid badges={badges} />
+      </div>
+
+      <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-abyss-100 px-5 py-3 text-sm sm:px-6">
+        <Link href={`/divers/${userId}`} className="focus-ring text-ocean-600 underline">
+          View your public profile
+        </Link>
+        <Link href="/feed" className="focus-ring text-ocean-600 underline">
+          Feed
+        </Link>
+        <Link href="/divers" className="focus-ring text-ocean-600 underline">
+          Find divers
+        </Link>
       </div>
     </div>
   );

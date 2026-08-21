@@ -5,12 +5,13 @@ import { requireUser } from "@/lib/auth/session";
 import { computeDiveLogStats, listDiveLogEntries } from "@/lib/services/diveLogService";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Card, CardBody } from "@/components/ui/Card";
+import { Badge } from "@/components/badges/Badge";
 import { StarRating } from "@/components/reviews/StarRating";
 import { ButtonLink } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
   title: "Logbook",
-  description: "Your personal dive log — private, never shared.",
+  description: "Your personal dive log — private by default, shareable one dive at a time.",
 };
 
 export default async function LogbookPage() {
@@ -34,7 +35,7 @@ export default async function LogbookPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl text-abyss-900">Logbook</h1>
-          <p className="mt-2 text-abyss-500">Your personal dive log — private, never shared publicly.</p>
+          <p className="mt-2 text-abyss-500">Private by default — share individual dives from their own page if you want to.</p>
         </div>
         <ButtonLink href="/logbook/new">Log a dive</ButtonLink>
       </div>
@@ -84,10 +85,13 @@ export default async function LogbookPage() {
                         </div>
                       )}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-abyss-500">
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-abyss-500">
                       {entry.max_depth_m != null && <span>{entry.max_depth_m}m</span>}
                       {entry.duration_minutes != null && <span>· {entry.duration_minutes} min</span>}
                       {entry.water_temp_c != null && <span>· {entry.water_temp_c}°C</span>}
+                      {entry.visibility !== "private" && (
+                        <Badge tone="info">{entry.visibility === "public" ? "Public" : "Followers"}</Badge>
+                      )}
                     </div>
                   </CardBody>
                 </Card>
