@@ -5,15 +5,20 @@
 // searcher's stated budget. Never shown to the user as a converted price —
 // displayed prices always stay in their real, original currency.
 //
-// Two independent free, keyless providers, tried in order — if the first
-// is unreachable or changes shape, the second keeps this working rather
-// than silently falling back to "never compare" for every search:
+// Two independent free, keyless providers, merged together — using only
+// one left real currencies in our data uncovered (Frankfurter's ~30-currency
+// ECB reference list has no Fijian dollar, for instance) even though the
+// provider itself was reachable and returned a perfectly good response for
+// everything it does track. Merging maximizes real coverage instead of
+// treating "provider responded" as "provider covers every currency we
+// need":
 //   1. Frankfurter (https://www.frankfurter.app) — European Central Bank
-//      reference rates, updated on ECB business days.
-//   2. open.er-api.com — updated daily, broader currency coverage.
-// Both cover most major currencies but not every one in our data (e.g. the
-// Fijian dollar is in neither) — callers must treat a missing currency as
-// "no rate available", not as parity.
+//      reference rates, updated on ECB business days. Takes precedence
+//      where both providers cover the same currency.
+//   2. open.er-api.com — updated daily, much broader currency list; fills
+//      in whatever Frankfurter doesn't track.
+// A currency in neither provider's list is still never guessed — callers
+// must treat it as "no rate available", not as parity.
 const FRANKFURTER_URL = "https://api.frankfurter.app/latest?from=EUR";
 const OPEN_ER_API_URL = "https://open.er-api.com/v6/latest/EUR";
 
@@ -46,16 +51,21 @@ export interface FetchExchangeRatesResult {
 }
 
 export async function fetchExchangeRates(): Promise<FetchExchangeRatesResult> {
+  const [frankfurter, openErApi] = await Promise.allSettled([fetchFrankfurter(), fetchOpenErApi()]);
+
+  const merged: Record<string, number> = {};
   const errors: string[] = [];
-  for (const fetcher of [fetchFrankfurter, fetchOpenErApi]) {
-    try {
-      const rates = await fetcher();
-      return { rates: { base: "EUR", rates } };
-    } catch (err) {
-      errors.push(err instanceof Error ? err.message : String(err));
-    }
-  }
-  return { rates: null, error: errors.join("; ") };
+
+  // open.er-api.com first (broader coverage), then Frankfurter over the
+  // top — so where both track a currency, the ECB-backed figure wins.
+  if (openErApi.status === "fulfilled") Object.assign(merged, openErApi.value);
+  else errors.push(openErApi.reason instanceof Error ? openErApi.reason.message : String(openErApi.reason));
+
+  if (frankfurter.status === "fulfilled") Object.assign(merged, frankfurter.value);
+  else errors.push(frankfurter.reason instanceof Error ? frankfurter.reason.message : String(frankfurter.reason));
+
+  if (Object.keys(merged).length === 0) return { rates: null, error: errors.join("; ") };
+  return { rates: { base: "EUR", rates: merged }, error: errors.length > 0 ? errors.join("; ") : undefined };
 }
 
 /** Converts an amount in `fromCurrency` to its EUR equivalent, or null when we have no rate for it. */
