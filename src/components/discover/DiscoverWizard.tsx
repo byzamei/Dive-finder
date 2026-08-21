@@ -358,7 +358,7 @@ function StepProgress({ step }: { step: number }) {
                   ? "bg-ocean-600 text-white"
                   : i === step
                     ? "bg-ocean-600 text-white ring-4 ring-ocean-100"
-                    : "bg-abyss-100 text-abyss-400"
+                    : "bg-abyss-100 text-abyss-600"
               }`}
             >
               {i < step ? <CheckIcon className="h-3.5 w-3.5" /> : i + 1}
