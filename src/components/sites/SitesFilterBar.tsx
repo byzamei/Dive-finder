@@ -18,6 +18,7 @@ export function SitesFilterBar({ destinations }: { destinations: Destination[] }
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
+    params.delete("page"); // a new filter changes the result set, so any page number beyond it would 404-ish (empty page)
     router.push(`/sites?${params.toString()}`);
   }
 

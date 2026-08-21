@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DataClaim, Destination, DiveSite, MarineSpecies } from "@/lib/types/domain";
+import type { AccessType, DataClaim, Destination, DiveSite, MarineSpecies } from "@/lib/types/domain";
 
 /** Data access for destination/site browsing, detail pages, and admin CRUD. */
 
@@ -50,6 +50,39 @@ export async function listPublishedSites(supabase: SupabaseClient): Promise<Dive
       destination_slug: row.destinations?.slug ?? "",
     })
   );
+}
+
+export interface PaginatedSites {
+  sites: DiveSiteWithDestination[];
+  total: number;
+}
+
+/** Same data as listPublishedSites, but filtered and paged server-side so the page count reflects the actual result set, not the full catalog. */
+export async function listPublishedSitesPage(
+  supabase: SupabaseClient,
+  opts: { destinationId?: string; accessType?: AccessType; page: number; pageSize: number }
+): Promise<PaginatedSites> {
+  const from = (opts.page - 1) * opts.pageSize;
+  const to = from + opts.pageSize - 1;
+
+  let query = supabase
+    .from("dive_sites")
+    .select("*, destinations(name, slug)", { count: "exact" })
+    .eq("status", "published");
+  if (opts.destinationId) query = query.eq("destination_id", opts.destinationId);
+  if (opts.accessType) query = query.eq("access_type", opts.accessType);
+
+  const { data, count, error } = await query.order("name").range(from, to);
+  if (error) throw error;
+
+  const sites = ((data ?? []) as unknown as (DiveSite & { destinations: { name: string; slug: string } | null })[]).map(
+    (row) => ({
+      ...row,
+      destination_name: row.destinations?.name ?? "Unknown destination",
+      destination_slug: row.destinations?.slug ?? "",
+    })
+  );
+  return { sites, total: count ?? sites.length };
 }
 
 export async function getDiveSiteBySlug(supabase: SupabaseClient, slug: string): Promise<DiveSite | null> {

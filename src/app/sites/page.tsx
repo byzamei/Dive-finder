@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { listPublishedDestinations, listPublishedSites } from "@/lib/services/destinationService";
+import { listPublishedDestinations, listPublishedSitesPage } from "@/lib/services/destinationService";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/badges/Badge";
+import { Pagination } from "@/components/ui/Pagination";
 import { SitesFilterBar } from "@/components/sites/SitesFilterBar";
 import type { AccessType } from "@/lib/types/domain";
 
@@ -12,19 +13,35 @@ export const metadata: Metadata = {
   description: "Browse individual dive sites (spots) across every DiveFinder destination.",
 };
 
+const PAGE_SIZE = 24;
+
 export default async function SitesPage({
   searchParams,
 }: {
-  searchParams: { destination?: string; access?: string };
+  searchParams: { destination?: string; access?: string; page?: string };
 }) {
   const supabase = await createClient();
-  const [sites, destinations] = await Promise.all([listPublishedSites(supabase), listPublishedDestinations(supabase)]);
+  const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const visible = sites.filter((s) => {
-    if (searchParams.destination && s.destination_id !== searchParams.destination) return false;
-    if (searchParams.access && s.access_type !== searchParams.access) return false;
-    return true;
-  });
+  const [{ sites: visible, total }, destinations] = await Promise.all([
+    listPublishedSitesPage(supabase, {
+      destinationId: searchParams.destination || undefined,
+      accessType: (searchParams.access as AccessType) || undefined,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    listPublishedDestinations(supabase),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  function buildHref(nextPage: number) {
+    const params = new URLSearchParams();
+    if (searchParams.destination) params.set("destination", searchParams.destination);
+    if (searchParams.access) params.set("access", searchParams.access);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    const qs = params.toString();
+    return qs ? `/sites?${qs}` : "/sites";
+  }
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -38,7 +55,11 @@ export default async function SitesPage({
       {visible.length === 0 ? (
         <p className="mt-8 text-sm italic text-abyss-400">No dive sites match these filters yet.</p>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <>
+          <p className="mt-6 text-sm text-abyss-500">
+            {total} site{total === 1 ? "" : "s"}
+          </p>
+          <div className="mt-2 grid gap-4 sm:grid-cols-2">
           {visible.map((site) => (
             <Link key={site.id} href={`/sites/${site.slug}`} className="focus-ring block">
               <Card>
@@ -56,7 +77,9 @@ export default async function SitesPage({
               </Card>
             </Link>
           ))}
-        </div>
+          </div>
+          <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
+        </>
       )}
     </main>
   );
