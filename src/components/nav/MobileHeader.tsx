@@ -8,13 +8,14 @@ import { LogoMark } from "@/components/LogoMark";
 
 // TopNav (logo + full nav) only renders at md: and up. BottomNav already
 // covers Search/Explore/Reservations/Favorites/Account on phones, so this
-// menu only needs the sections that are one level under "Explore" — the
-// catalog itself (destinations + map) is already one tap away via the
-// bottom bar.
+// menu carries everything else one tap away: catalog sub-sections
+// (Wildlife, Dive sites, Gear) and the personal/social pages that on
+// desktop live inside TopNav's Account dropdown (Logbook, Feed, Divers).
 const MENU_ITEMS = [
   { href: "/wildlife", label: "Wildlife" },
   { href: "/sites", label: "Dive sites" },
   { href: "/gear", label: "Gear" },
+  { href: "/logbook", label: "Logbook" },
   { href: "/feed", label: "Feed" },
   { href: "/divers", label: "Divers" },
 ];
