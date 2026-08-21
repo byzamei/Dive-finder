@@ -12,6 +12,7 @@ import { SuitabilityBadge } from "@/components/badges/DataBadges";
 import { DemoDataBadge } from "@/components/badges/DataBadges";
 import { monthName } from "@/lib/utils/format";
 import { SpeciesSeenToggle } from "@/components/wildlife/SpeciesSeenToggle";
+import { searchDestinationPhoto } from "@/lib/services/photoService";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = await createClient();
@@ -29,13 +30,14 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [destinations, sites, seasonality, seenRow] = await Promise.all([
+  const [destinations, sites, seasonality, seenRow, photo] = await Promise.all([
     getDestinationsForSpecies(supabase, species.id),
     getSitesForSpecies(supabase, species.id),
     getSeasonalityForSpecies(supabase, species.id),
     user
       ? supabase.from("user_species_seen").select("id").eq("user_id", user.id).eq("species_id", species.id).maybeSingle()
       : Promise.resolve({ data: null }),
+    searchDestinationPhoto(`${species.common_name} underwater`),
   ]);
 
   const siteDestinationSlugs = new Set(sites.map((s) => s.destination_slug));
@@ -47,6 +49,21 @@ export default async function SpeciesPage({ params }: { params: { slug: string }
       <Link href="/wildlife" className="focus-ring text-sm text-ocean-700 hover:underline">
         ← Wildlife
       </Link>
+
+      {photo && (
+        <figure className="mt-3 overflow-hidden rounded-xl2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo.url} alt={photo.alt} className="h-52 w-full object-cover sm:h-64" />
+          <figcaption className="mt-1.5 text-right text-xs text-abyss-400">
+            Photo by{" "}
+            <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-abyss-600">
+              {photo.photographer}
+            </a>{" "}
+            on Pexels
+          </figcaption>
+        </figure>
+      )}
+
       <h1 className="mt-2 font-display text-3xl text-abyss-900">{species.common_name}</h1>
       <p className="mt-1 italic text-abyss-400">{species.scientific_name}</p>
 

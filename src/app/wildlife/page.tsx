@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listSpecies } from "@/lib/services/wildlifeService";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/badges/Badge";
+import { searchDestinationPhoto, type DestinationPhoto } from "@/lib/services/photoService";
 import type { SpeciesCategory } from "@/lib/types/domain";
 
 export const metadata: Metadata = {
@@ -49,6 +50,11 @@ export default async function WildlifePage({
     filter === "seen"
       ? [...byCategory].sort((a, b) => (seenOnById.get(b.id) ?? "").localeCompare(seenOnById.get(a.id) ?? ""))
       : byCategory;
+
+  const photoEntries = await Promise.all(
+    visible.map(async (s) => [s.id, await searchDestinationPhoto(`${s.common_name} underwater`)] as const)
+  );
+  const photoById = new Map<string, DestinationPhoto | null>(photoEntries);
 
   function withParams(overrides: { filter?: string; category?: string | null }) {
     const params = new URLSearchParams();
@@ -115,16 +121,30 @@ export default async function WildlifePage({
           <Link key={s.id} href={`/wildlife/${s.slug}`} className="focus-ring block">
             <Card>
               <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-display text-lg text-abyss-900">{s.common_name}</p>
-                    <p className="text-sm italic text-abyss-400">{s.scientific_name}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-3.5">
+                  {photoById.get(s.id) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photoById.get(s.id)!.url}
+                      alt={photoById.get(s.id)!.alt}
+                      className="h-14 w-14 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ocean-50 text-ocean-600">
+                      <FishSilhouette className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate font-display text-lg text-abyss-900">{s.common_name}</p>
+                      {s.category && <Badge tone="neutral">{s.category}</Badge>}
+                    </div>
+                    <p className="truncate text-sm italic text-abyss-400">{s.scientific_name}</p>
                     {seenOnById.has(s.id) && (
-                      <Badge tone="success">{formatSeenOn(seenOnById.get(s.id) ?? null)}</Badge>
+                      <Badge tone="success" className="mt-1.5">
+                        {formatSeenOn(seenOnById.get(s.id) ?? null)}
+                      </Badge>
                     )}
-                    {s.category && <Badge tone="neutral">{s.category}</Badge>}
                   </div>
                 </div>
               </CardBody>
@@ -139,4 +159,14 @@ export default async function WildlifePage({
 function formatSeenOn(seenOn: string | null): string {
   if (!seenOn) return "Seen";
   return `Seen ${new Date(seenOn).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
+}
+
+function FishSilhouette(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
+      <path d="M3 12c3-4 8-6 13-4 2 .8 3.5 2.2 5 4-1.5 1.8-3 3.2-5 4-5 2-10 0-13-4Z" />
+      <path d="M17 9.5v5" />
+      <circle cx={7.5} cy={11.5} r={0.6} fill="currentColor" />
+    </svg>
+  );
 }
