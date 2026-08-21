@@ -19,7 +19,7 @@ export default async function NewDiveLogEntryPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="font-display text-3xl text-abyss-900">Log a dive</h1>
-      <p className="mt-2 text-abyss-500">Private to you — never shared publicly.</p>
+      <p className="mt-2 text-abyss-500">Private by default — share it from the form below if you want to.</p>
       <div className="mt-8">
         <DiveLogForm userId={user.id} sites={sites} species={(species ?? []) as MarineSpecies[]} existing={null} />
       </div>
