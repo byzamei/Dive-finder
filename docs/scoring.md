@@ -1,15 +1,19 @@
 # Scoring
 
 Code: `src/lib/scoring/` (`weights.ts`, `types.ts`, `hardFilters.ts`,
-`dimensions.ts`, `scoringService.ts`). Fully unit tested in
-`tests/unit/scoring.test.ts` (T001, T002, T005, T006, T007, T010).
+`preferenceFilters.ts`, `dimensions.ts`, `scoringService.ts`). Fully unit
+tested in `tests/unit/scoring.test.ts` (T001, T002, T005, T006, T007, T010,
+T011).
 
-## 1. Hard filters run first, and are safety-only
+## 1. Two exclusion layers run before scoring: safety, then preference
 
-`applyHardFilters()` never awards points — it only ever excludes or warns.
-A destination is **excluded** from ranked results when a safety-relevant
-fact is known with **high confidence** and conflicts with the searcher's
-declared experience:
+Both only ever exclude or (for safety) warn — neither ever awards points.
+`scoreDestination()` runs both; a destination excluded by either is dropped
+from `ranked` entirely (`scoreAllDestinations()`).
+
+**1a. `applyHardFilters()` — safety, gated on confidence.** A destination is
+**excluded** when a safety-relevant fact is known with **high confidence**
+and conflicts with the searcher's declared experience:
 
 - Beginner-like diver (`numberOfDivesBucket` < 25 dives, or
   `currentExperience` in `none|some`) + a `typicalCurrent: 'strong'` claim
@@ -29,6 +33,35 @@ by something it wasn't told (T007).
 are self-reported only — a cave-flagged site always surfaces the
 "confirm cave-specific credentials with the operator" warning regardless of
 what the diver declared. Declared experience is never an authorization.
+
+**1b. `applyPreferenceFilters()` — the searcher's own criteria, gated on
+data, not confidence.** Budget, dive type, conditions, and wildlife are
+otherwise scored (never excluded) by the weighted dimensions below — but a
+destination is also **excluded outright** the moment we hold a fact that
+affirmatively rules it out for one of these:
+
+- **Budget**: the cheapest known price (a destination-level price if one
+  exists, else the cheapest current operator price — see
+  `indicativeBudget` in `types.ts`) is above `budgetTotal`, **in the same
+  currency** as `criteria.currency`. Cross-currency prices are never
+  compared (no real exchange rate to use honestly), so they neither exclude
+  nor get flagged — see `docs/data-governance.md`.
+- **Dive type**: the destination has `dive_type_tags` and none of them are
+  in `criteria.diveTypes`.
+- **Conditions**: `typicalCurrent` is known and not in
+  `criteria.acceptedCurrent`.
+- **Wildlife**: none of `criteria.speciesIds` has any evidence at this
+  destination — no `destination_species` presence link and no
+  `species_seasonality` row for any of them. This is OR across the
+  selection (any one matching species is enough to keep the destination) —
+  checking several species means "show me destinations with any of these,"
+  not "all of them at once."
+
+Exactly like the safety filters, **missing data never excludes** — a
+destination with no price, no tags, no known current, or no wildlife
+records for the requested criterion stays in, because we cannot honestly
+say it fails something we have no data on. Only an affirmative fact
+excludes.
 
 ## 2. Eight weighted dimensions, summing to 100
 

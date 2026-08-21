@@ -33,7 +33,9 @@ export interface DestinationScoringFacts {
   monthlyEnvironment: Partial<Record<number, MonthlyEnvironment>>;
   /** speciesId -> month -> qualitative suitability, only when source-backed. */
   monthlySpeciesSuitability: Record<UUID, Partial<Record<number, Suitability>>>;
-  /** Indicative, non-expired package/day-rate price range if one exists. */
+  /** speciesId of every species with a verified destination_species link — presence only, no calendar required. */
+  speciesPresent: UUID[];
+  /** Indicative, non-expired price: a destination-level package/day-rate row if one exists, else the cheapest current operator (dive center / liveaboard) price for this destination. */
   indicativeBudget: { amountMin: number | null; amountMax: number | null; currency: string } | null;
   typicalCurrent: CurrentLevel | null;
   typicalCurrentConfidence: Confidence | null;

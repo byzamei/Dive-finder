@@ -1,6 +1,7 @@
 import type { Destination, ScoreBreakdown, ScoredDestination, SearchCriteria } from "@/lib/types/domain";
 import { SCORE_WEIGHTS, TOTAL_WEIGHT, type ScoreDimension } from "./weights";
 import { applyHardFilters } from "./hardFilters";
+import { applyPreferenceFilters } from "./preferenceFilters";
 import {
   scoreAccessibility,
   scoreBudgetFit,
@@ -112,9 +113,13 @@ function buildReasonsAndTradeOffs(dimensions: Record<ScoreDimension, DimensionSc
  * Scores one destination against one set of search criteria.
  *
  * Contract:
- *  - Applies safety hard filters FIRST. If `excluded` is true, callers
- *    should drop the destination from ranked results entirely (it is still
- *    returned here so callers/tests can inspect *why*).
+ *  - Applies safety hard filters AND preference filters FIRST. If
+ *    `excluded` is true, callers should drop the destination from ranked
+ *    results entirely (it is still returned here so callers/tests can
+ *    inspect *why*). Safety filters (hardFilters.ts) only exclude on
+ *    high-confidence danger; preference filters (preferenceFilters.ts)
+ *    exclude once a stated criterion — budget, dive type, conditions,
+ *    wildlife — is affirmatively known not to be met.
  *  - Never fabricates a numeric wildlife-sighting probability — dimensions
  *    are qualitative suitability values averaged into a 0-1 fraction, only
  *    ever surfaced as a relative match score, not a probability.
@@ -126,7 +131,9 @@ export function scoreDestination(
   facts: DestinationScoringFacts,
   criteria: SearchCriteria
 ): ScoredDestination & { excluded: boolean } {
-  const { excluded, warnings } = applyHardFilters(facts, criteria);
+  const { excluded: unsafe, warnings } = applyHardFilters(facts, criteria);
+  const { excluded: mismatched } = applyPreferenceFilters(facts, criteria);
+  const excluded = unsafe || mismatched;
   const dimensions = computeDimensions(facts, criteria);
   const { matchScore, dataCompletenessPct } = aggregateScore(dimensions);
   const { reasons, tradeOffs, unknowns } = buildReasonsAndTradeOffs(dimensions);
@@ -153,13 +160,15 @@ export interface ScoreAllResult {
 }
 
 /**
- * Scores and ranks a candidate set of destinations. Excluded (hard-filtered)
- * destinations are removed from `ranked` but counted in `excludedCount` so
- * the UI can say "3 destinations were hidden for safety reasons".
- * `lowDataWarning` is true when the *average* data completeness across
- * results is low enough that the ranking should be presented as weak/
- * exploratory rather than authoritative (see §8 "results page must
- * indicate when too much data is missing").
+ * Scores and ranks a candidate set of destinations. Excluded destinations
+ * — whether for safety (hardFilters.ts) or because a stated criterion is
+ * affirmatively not met (preferenceFilters.ts) — are removed from `ranked`
+ * but counted in `excludedCount` so the UI can say "N destinations were
+ * hidden by your filters". `lowDataWarning` is true when the *average*
+ * data completeness across the remaining results is low enough that the
+ * ranking should be presented as weak/exploratory rather than
+ * authoritative (see §8 "results page must indicate when too much data is
+ * missing").
  */
 export function scoreAllDestinations(
   entries: { destination: Destination; facts: DestinationScoringFacts }[],

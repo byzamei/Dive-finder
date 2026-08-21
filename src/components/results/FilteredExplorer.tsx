@@ -247,7 +247,7 @@ export function FilteredExplorer({
             <p className="hidden text-sm text-abyss-500 lg:block">
               {results === null
                 ? "Loading…"
-                : `${ranked.length} destination${ranked.length === 1 ? "" : "s"}, ranked by fit to what you told us — only unsafe matches are ever hidden, everything else is reordered, not removed`}
+                : `${ranked.length} destination${ranked.length === 1 ? "" : "s"} match your filters`}
             </p>
             {results !== null && ranked.length === 0 && (
               <p className="rounded-xl2 border border-dashed border-abyss-200 p-4 text-sm text-abyss-500">
@@ -258,15 +258,6 @@ export function FilteredExplorer({
             {ranked.map((r) => {
               const d = r.destination;
               const price = prices.get(d.id);
-              // Only claim "over budget" when the price and the stated budget
-              // share a currency — converting across currencies without a
-              // real exchange rate would be a fabricated number, so we stay
-              // silent rather than guess (see docs/data-governance.md).
-              const overBudget =
-                price != null &&
-                criteria.budgetTotal != null &&
-                price.currency === (criteria.currency ?? "EUR") &&
-                price.amountMin > criteria.budgetTotal;
               return (
                 <div
                   key={d.id}
@@ -303,18 +294,8 @@ export function FilteredExplorer({
                         </p>
                       </div>
                       {price && (
-                        <p className="shrink-0 text-right">
-                          <span className="font-display text-lg text-ocean-700">
-                            {formatDestinationPrice(price)}
-                          </span>
-                          {overBudget && (
-                            <Badge
-                              tone="warning"
-                              className="ml-1.5 align-middle"
-                            >
-                              Over budget
-                            </Badge>
-                          )}
+                        <p className="shrink-0 font-display text-lg text-ocean-700">
+                          {formatDestinationPrice(price)}
                         </p>
                       )}
                     </Link>

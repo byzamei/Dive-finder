@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Confidence, CurrentLevel, Destination, Suitability, UUID } from "@/lib/types/domain";
 import type { DestinationScoringFacts, MinExperienceRequirement } from "@/lib/scoring/types";
+import { getCheapestPricePerDestination } from "./operatorService";
 
 /**
  * Data-access layer that turns raw Supabase rows into the normalized
@@ -37,9 +38,10 @@ export async function buildScoringFacts(
   if (ids.length === 0) return new Map();
 
   const nowIso = new Date().toISOString();
-  const [envRes, seasonRes, priceRes, claimRes, reviewRes] = await Promise.all([
+  const [envRes, seasonRes, presenceRes, priceRes, claimRes, reviewRes, cheapestOperatorPrices] = await Promise.all([
     supabase.from("environmental_seasonality").select("*").in("destination_id", ids),
     supabase.from("species_seasonality").select("*").in("destination_id", ids),
+    supabase.from("destination_species").select("destination_id, species_id").in("destination_id", ids),
     supabase
       .from("prices")
       .select("*")
@@ -48,9 +50,16 @@ export async function buildScoringFacts(
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`),
     supabase.from("data_claims").select("*").eq("entity_type", "destination").in("entity_id", ids).is("superseded_by", null),
     supabase.from("reviews").select("entity_id, rating").eq("entity_type", "destination").eq("status", "published").in("entity_id", ids),
+    // Destination-level `prices` rows (entity_type='destination') are rare —
+    // almost all real price data lives on operators (dive_centers /
+    // liveaboards). Without this fallback, budgetFit and the new budget
+    // preference filter would see `indicativeBudget: null` for nearly every
+    // real destination and never do anything, regardless of what the
+    // searcher typed.
+    getCheapestPricePerDestination(supabase, ids),
   ]);
 
-  for (const res of [envRes, seasonRes, priceRes, claimRes, reviewRes]) {
+  for (const res of [envRes, seasonRes, presenceRes, priceRes, claimRes, reviewRes]) {
     if (res.error) throw res.error;
   }
 
@@ -59,6 +68,7 @@ export async function buildScoringFacts(
   for (const destination of destinations) {
     const envRows = (envRes.data ?? []).filter((r) => r.destination_id === destination.id);
     const seasonRows = (seasonRes.data ?? []).filter((r) => r.destination_id === destination.id);
+    const presenceRows = (presenceRes.data ?? []).filter((r) => r.destination_id === destination.id);
     const priceRows = (priceRes.data ?? []).filter((r) => r.entity_id === destination.id);
     const claimRows = (claimRes.data ?? []).filter((r) => r.entity_id === destination.id);
     const reviewRows = (reviewRes.data ?? []).filter((r) => r.entity_id === destination.id);
@@ -81,9 +91,12 @@ export async function buildScoringFacts(
     }
 
     const priceRow = priceRows.find((p) => p.price_type === "package") ?? priceRows[0];
+    const cheapestOperatorPrice = cheapestOperatorPrices.get(destination.id);
     const indicativeBudget = priceRow
       ? { amountMin: priceRow.amount_min, amountMax: priceRow.amount_max, currency: priceRow.currency }
-      : null;
+      : cheapestOperatorPrice
+        ? { amountMin: cheapestOperatorPrice.amountMin, amountMax: null, currency: cheapestOperatorPrice.currency }
+        : null;
 
     const currentClaim = claimRows.find((c) => c.field_name === "typical_current" && c.review_status === "verified");
     const levelClaim = claimRows.find((c) => c.field_name === "recommended_level" && c.review_status === "verified");
@@ -109,6 +122,7 @@ export async function buildScoringFacts(
       demoData: destination.demo_data,
       monthlyEnvironment,
       monthlySpeciesSuitability,
+      speciesPresent: presenceRows.map((r) => r.species_id),
       indicativeBudget,
       typicalCurrent: (currentClaim?.value_json as CurrentLevel) ?? null,
       typicalCurrentConfidence: currentClaim ? (currentClaim.confidence as Confidence) : null,

@@ -27,6 +27,7 @@ export function makeFacts(overrides: Partial<DestinationScoringFacts> = {}): Des
     demoData: false,
     monthlyEnvironment: {},
     monthlySpeciesSuitability: {},
+    speciesPresent: [],
     indicativeBudget: null,
     typicalCurrent: null,
     typicalCurrentConfidence: null,

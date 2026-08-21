@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scoreDestination, scoreAllDestinations, aggregateScore, computeDimensions } from "@/lib/scoring/scoringService";
 import { scoreWildlifeMatch } from "@/lib/scoring/dimensions";
 import { applyHardFilters } from "@/lib/scoring/hardFilters";
+import { applyPreferenceFilters } from "@/lib/scoring/preferenceFilters";
 import { SCORE_WEIGHTS } from "@/lib/scoring/weights";
 import type { SearchCriteria } from "@/lib/types/domain";
 import { makeDestination, makeFacts } from "./fixtures";
@@ -121,11 +122,73 @@ describe("T006 — impossible budget produces a clear low score, never an invent
     expect(result.tradeOffs).toContain("Budget");
   });
 
-  it("never hard-excludes purely for budget — budget is scored, not filtered", () => {
+  it("never hard-excludes purely for budget — budget is scored by applyHardFilters(), not filtered (applyPreferenceFilters() is the separate step that does, see T011)", () => {
     const destination = makeDestination();
     const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: 12000, currency: "EUR" } });
     const { excluded } = applyHardFilters(facts, { budgetTotal: 300 });
     expect(excluded).toBe(false);
+  });
+});
+
+describe("T011 — preference filters actually exclude what the searcher asked to exclude", () => {
+  it("excludes a destination whose cheapest same-currency price is above budget", () => {
+    const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "EUR" } });
+    const { excluded, reasons } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" });
+    expect(excluded).toBe(true);
+    expect(reasons.length).toBeGreaterThan(0);
+  });
+
+  it("never excludes for budget across different currencies — no real exchange rate to compare with", () => {
+    const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "USD" } });
+    const { excluded } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" });
+    expect(excluded).toBe(false);
+  });
+
+  it("never excludes for budget when there is no price data at all — unknown is not the same as over budget", () => {
+    const facts = makeFacts({ indicativeBudget: null });
+    const { excluded } = applyPreferenceFilters(facts, { budgetTotal: 300, currency: "EUR" });
+    expect(excluded).toBe(false);
+  });
+
+  it("excludes a destination whose known dive-type tags share none with what was requested", () => {
+    const facts = makeFacts({ diveTypeTags: ["wreck"] });
+    const { excluded } = applyPreferenceFilters(facts, { diveTypes: ["muck"] });
+    expect(excluded).toBe(true);
+  });
+
+  it("never excludes on dive type when the destination has no tags at all", () => {
+    const facts = makeFacts({ diveTypeTags: [] });
+    const { excluded } = applyPreferenceFilters(facts, { diveTypes: ["muck"] });
+    expect(excluded).toBe(false);
+  });
+
+  it("excludes a destination whose known typical current is outside the accepted range", () => {
+    const facts = makeFacts({ typicalCurrent: "strong", typicalCurrentConfidence: "low" });
+    const { excluded } = applyPreferenceFilters(facts, { acceptedCurrent: ["none", "mild"] });
+    expect(excluded).toBe(true);
+  });
+
+  it("excludes for wildlife only when NONE of the selected species has any evidence (OR across the selection)", () => {
+    const facts = makeFacts({ speciesPresent: [SHARK_ID], monthlySpeciesSuitability: {} });
+    const excludedNone = applyPreferenceFilters(facts, { speciesIds: ["other-species"] });
+    expect(excludedNone.excluded).toBe(true);
+
+    const excludedSome = applyPreferenceFilters(facts, { speciesIds: [SHARK_ID, "other-species"] });
+    expect(excludedSome.excluded).toBe(false);
+  });
+
+  it("a species with only seasonality data (no destination_species link) still counts as evidence", () => {
+    const facts = makeFacts({ speciesPresent: [], monthlySpeciesSuitability: { [SHARK_ID]: { 2: "good" } } });
+    const { excluded } = applyPreferenceFilters(facts, { speciesIds: [SHARK_ID] });
+    expect(excluded).toBe(false);
+  });
+
+  it("flows through scoreAllDestinations exactly like a safety exclusion — dropped from ranked, counted in excludedCount", () => {
+    const destination = makeDestination();
+    const facts = makeFacts({ indicativeBudget: { amountMin: 8000, amountMax: null, currency: "EUR" } });
+    const { ranked, excludedCount } = scoreAllDestinations([{ destination, facts }], { budgetTotal: 300, currency: "EUR" });
+    expect(ranked).toHaveLength(0);
+    expect(excludedCount).toBe(1);
   });
 });
 
