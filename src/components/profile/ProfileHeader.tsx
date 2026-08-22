@@ -36,20 +36,27 @@ export function ProfileHeader({
   const [homeBase, setHomeBase] = useState(profile.home_base ?? "");
   const [profileVisibility, setProfileVisibility] = useState(profile.profile_visibility);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const badges = computeBadges({ diverProfile, savedCount, speciesSeenCount, divesLoggedCount });
 
   async function save() {
     setSaving(true);
-    const supabase = createClient();
-    await updateProfile(supabase, userId, {
-      display_name: displayName || null,
-      bio: bio || null,
-      home_base: homeBase || null,
-      profile_visibility: profileVisibility,
-    });
-    setSaving(false);
-    setEditing(false);
+    setError(null);
+    try {
+      const supabase = createClient();
+      await updateProfile(supabase, userId, {
+        display_name: displayName || null,
+        bio: bio || null,
+        home_base: homeBase || null,
+        profile_visibility: profileVisibility,
+      });
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save your profile");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -97,13 +104,14 @@ export function ProfileHeader({
                   This only covers your name/bio/stats. Individual dives stay private unless you share them from the Logbook.
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button size="sm" onClick={save} disabled={saving}>
                   {saving ? "Saving…" : "Save"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(false)} type="button">
                   Cancel
                 </Button>
+                {error && <span className="text-sm text-coral-600">{error}</span>}
               </div>
             </div>
           ) : (

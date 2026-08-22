@@ -70,6 +70,7 @@ export function DiverProfileForm({
   );
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const certsForAgency = certifications.filter((c) => c.agency_id === form.certification_agency_id);
 
@@ -85,10 +86,15 @@ export function DiverProfileForm({
 
   async function save() {
     setSaving(true);
+    setError(null);
     const supabase = createClient();
-    await supabase.from("diver_profiles").upsert({ ...form, user_id: userId }, { onConflict: "user_id" });
+    const { error: saveError } = await supabase.from("diver_profiles").upsert({ ...form, user_id: userId }, { onConflict: "user_id" });
     setSaving(false);
-    setSavedAt(Date.now());
+    if (saveError) {
+      setError(saveError.message);
+    } else {
+      setSavedAt(Date.now());
+    }
   }
 
   return (
@@ -241,6 +247,7 @@ export function DiverProfileForm({
           {saving ? "Saving…" : "Save profile"}
         </Button>
         {savedAt && <span className="text-sm text-seaglass-700">Saved ✓</span>}
+        {error && <span className="text-sm text-coral-600">{error}</span>}
       </div>
     </div>
   );

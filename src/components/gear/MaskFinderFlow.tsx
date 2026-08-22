@@ -27,6 +27,7 @@ export function MaskFinderFlow() {
   const [masks, setMasks] = useState<Mask[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (step !== "results") return;
@@ -36,15 +37,17 @@ export function MaskFinderFlow() {
 
   async function saveToProfile() {
     setSaving(true);
+    setSaveError(null);
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
+      setSaving(false);
       router.push("/login?redirectTo=/gear/mask-finder");
       return;
     }
-    await supabase.from("diver_profiles").upsert(
+    const { error } = await supabase.from("diver_profiles").upsert(
       {
         user_id: user.id,
         mask_face_width: profile.faceWidth,
@@ -55,7 +58,11 @@ export function MaskFinderFlow() {
       { onConflict: "user_id" }
     );
     setSaving(false);
-    setSaved(true);
+    if (error) {
+      setSaveError(error.message);
+    } else {
+      setSaved(true);
+    }
   }
 
   if (step === "intro") {
@@ -188,6 +195,7 @@ export function MaskFinderFlow() {
         <Button variant="ghost" size="sm" onClick={saveToProfile} disabled={saving || saved}>
           {saved ? "Saved to profile" : saving ? "Saving…" : "Save to my profile"}
         </Button>
+        {saveError && <span className="self-center text-sm text-coral-600">{saveError}</span>}
       </div>
 
       {advice.length > 0 && (

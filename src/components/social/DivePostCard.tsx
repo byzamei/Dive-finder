@@ -25,6 +25,7 @@ export function DivePostCard({ entry, viewerId }: { entry: FeedEntry; viewerId: 
   const [comments, setComments] = useState<DiveCommentWithAuthor[] | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -43,6 +44,7 @@ export function DivePostCard({ entry, viewerId }: { entry: FeedEntry; viewerId: 
   async function toggleKudos() {
     if (!viewerId || kudosPending) return;
     setKudosPending(true);
+    setActionError(null);
     const supabase = createClient();
     try {
       if (gaveKudos) {
@@ -54,6 +56,8 @@ export function DivePostCard({ entry, viewerId }: { entry: FeedEntry; viewerId: 
         setGaveKudos(true);
         setKudosCount((c) => c + 1);
       }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Couldn't send kudos");
     } finally {
       setKudosPending(false);
     }
@@ -70,11 +74,14 @@ export function DivePostCard({ entry, viewerId }: { entry: FeedEntry; viewerId: 
     e.preventDefault();
     if (!viewerId || !commentDraft.trim() || commentSubmitting) return;
     setCommentSubmitting(true);
+    setActionError(null);
     const supabase = createClient();
     try {
       await addComment(supabase, entry.id, viewerId, commentDraft.trim());
       setCommentDraft("");
       setComments(await listComments(supabase, entry.id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Couldn't post that comment");
     } finally {
       setCommentSubmitting(false);
     }
@@ -137,6 +144,7 @@ export function DivePostCard({ entry, viewerId }: { entry: FeedEntry; viewerId: 
         <button type="button" onClick={openComments} className="focus-ring font-medium text-abyss-500">
           {comments ? `${comments.length} comment${comments.length === 1 ? "" : "s"}` : "Comments"}
         </button>
+        {actionError && <span className="text-coral-600">{actionError}</span>}
       </div>
 
       {commentsOpen && (

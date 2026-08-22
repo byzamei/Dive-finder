@@ -33,6 +33,51 @@ export function DiscoverWizard() {
       .then(({ data }) => setSpecies((data ?? []) as MarineSpecies[]));
   }, []);
 
+  // The Profile page promises the saved diver profile "personalizes search
+  // results" — this is what makes that true, instead of it silently never
+  // happening. Only fills in fields the wizard doesn't already have an
+  // answer for (functional update, checked against the latest state), so a
+  // fast typist who starts answering before this resolves never has a
+  // fresh choice overwritten by a stale saved default.
+  useEffect(() => {
+    const supabase = createClient();
+    async function prefillFromDiverProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: diverProfile } = await supabase
+        .from("diver_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!diverProfile) return;
+
+      setCriteria((c) => ({
+        ...c,
+        numberOfDivesBucket: c.numberOfDivesBucket ?? diverProfile.number_of_dives_bucket ?? undefined,
+        currentExperience: c.currentExperience ?? diverProfile.current_experience ?? undefined,
+        nitroxCertified: c.nitroxCertified ?? diverProfile.nitrox_certified,
+        certificationId: c.certificationId ?? diverProfile.certification_id ?? undefined,
+        certificationAgencyId: c.certificationAgencyId ?? diverProfile.certification_agency_id ?? undefined,
+        speciesIds: c.speciesIds?.length
+          ? c.speciesIds
+          : diverProfile.species_preferences?.length
+            ? diverProfile.species_preferences
+            : c.speciesIds,
+        preferredWaterTempMinC: c.preferredWaterTempMinC ?? diverProfile.preferred_water_temp_min_c ?? undefined,
+        preferredWaterTempMaxC: c.preferredWaterTempMaxC ?? diverProfile.preferred_water_temp_max_c ?? undefined,
+        diveTypes: c.diveTypes?.length
+          ? c.diveTypes
+          : diverProfile.preferred_dive_types?.length
+            ? diverProfile.preferred_dive_types
+            : c.diveTypes,
+        caveDeclared: c.caveDeclared ?? diverProfile.cave_experience_declared,
+      }));
+    }
+    prefillFromDiverProfile();
+  }, []);
+
   function update<K extends keyof SearchCriteria>(key: K, value: SearchCriteria[K]) {
     setCriteria((c) => ({ ...c, [key]: value }));
   }
