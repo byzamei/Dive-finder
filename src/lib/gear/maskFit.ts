@@ -32,7 +32,14 @@ export function matchMask(profile: FaceProfile, mask: Mask): MaskMatch {
   let suitability: Suitability;
   if (noseMatch && widthMatch && reasons.length === 2) {
     suitability = "excellent";
-  } else if (noseMatch || widthMatch) {
+  } else if (reasons.length > 0) {
+    // Not `noseMatch || widthMatch` — either can be vacuously true when a
+    // mask simply has no recorded guidance for that dimension (empty
+    // array), which must never read as a positive signal on its own. Only
+    // a dimension that actually matched pushed a reason, so gating on
+    // reasons.length catches the real case this was missing: a mask whose
+    // one recorded dimension explicitly contradicts the profile, with the
+    // other dimension undocumented, was rating "good" with zero reasons.
     suitability = "good";
   } else {
     suitability = "low";

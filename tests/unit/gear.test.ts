@@ -169,6 +169,17 @@ describe("maskFit — qualitative matching, never a fabricated numeric fit score
     expect(result.suitability).toBe("low");
   });
 
+  it("returns 'low' — never 'good' — when the one recorded dimension mismatches and the other has no guidance at all", () => {
+    // fit_nose_bridge is empty (no guidance either way), fit_face_width
+    // explicitly recommends "wide" while the profile is "narrow" — real
+    // contrary evidence, with nothing to redeem it. An empty array must
+    // never read as a silent positive match here.
+    const mask = makeMask({ fit_nose_bridge: [], fit_face_width: ["wide"] });
+    const result = matchMask(narrowProfile, mask);
+    expect(result.suitability).toBe("low");
+    expect(result.reasons.length).toBeGreaterThan(0);
+  });
+
   it("matchMasks ranks excellent/good above low/unknown", () => {
     const excellent = makeMask({ id: "a", fit_nose_bridge: ["narrow"], fit_face_width: ["narrow"] });
     const unknown = makeMask({ id: "b", fit_nose_bridge: [], fit_face_width: [] });
