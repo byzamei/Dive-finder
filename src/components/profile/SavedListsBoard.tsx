@@ -35,6 +35,7 @@ export function SavedListsBoard({
   const [activeTab, setActiveTab] = useState<"all" | "unsorted" | string>("all");
   const [newListName, setNewListName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const visibleItems = useMemo(() => {
     if (activeTab === "all") return items;
@@ -47,39 +48,66 @@ export function SavedListsBoard({
     const name = newListName.trim();
     if (!name) return;
     setCreating(true);
+    setError(null);
     const supabase = createClient();
     try {
       const list = await createSavedList(supabase, userId, name);
       setLists((ls) => [...ls, list]);
       setNewListName("");
       setActiveTab(list.id);
+    } catch {
+      setError("Couldn't create the list — try again.");
     } finally {
       setCreating(false);
     }
   }
 
   async function handleDeleteList(listId: string) {
+    setError(null);
     const supabase = createClient();
-    await deleteSavedList(supabase, listId);
-    setLists((ls) => ls.filter((l) => l.id !== listId));
-    setItems((its) => its.map((i) => (i.listId === listId ? { ...i, listId: null } : i)));
-    if (activeTab === listId) setActiveTab("all");
+    try {
+      await deleteSavedList(supabase, listId);
+      setLists((ls) => ls.filter((l) => l.id !== listId));
+      setItems((its) => its.map((i) => (i.listId === listId ? { ...i, listId: null } : i)));
+      if (activeTab === listId) setActiveTab("all");
+    } catch {
+      setError("Couldn't delete the list — try again.");
+    }
   }
 
   async function handleMove(favoriteId: string, listId: string | null) {
+    setError(null);
+    const previous = items;
     setItems((its) => its.map((i) => (i.favoriteId === favoriteId ? { ...i, listId } : i)));
     const supabase = createClient();
-    await moveFavoriteToList(supabase, favoriteId, listId);
+    try {
+      await moveFavoriteToList(supabase, favoriteId, listId);
+    } catch {
+      setItems(previous);
+      setError("Couldn't move that item — try again.");
+    }
   }
 
   async function handleRemove(item: SavedItem) {
+    setError(null);
+    const previous = items;
     setItems((its) => its.filter((i) => i.favoriteId !== item.favoriteId));
     const supabase = createClient();
-    await removeFavorite(supabase, userId, item.entityType, item.entityId);
+    try {
+      await removeFavorite(supabase, userId, item.entityType, item.entityId);
+    } catch {
+      setItems(previous);
+      setError("Couldn't remove that item — try again.");
+    }
   }
 
   return (
     <div>
+      {error && (
+        <p className="mb-3 rounded-lg bg-coral-400/10 px-3 py-2 text-sm text-coral-600" role="alert">
+          {error}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
