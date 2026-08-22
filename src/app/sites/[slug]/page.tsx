@@ -11,6 +11,7 @@ import { SafetyNotice } from "@/components/SafetyNotice";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { featureFlags } from "@/lib/utils/featureFlags";
+import { buildPageMetadata } from "@/lib/utils/metadata";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
 import type { MarineSpecies } from "@/lib/types/domain";
 
@@ -18,7 +19,21 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const supabase = await createClient();
   const site = await getDiveSiteBySlug(supabase, params.slug);
   if (!site) return {};
-  return { title: site.name };
+  const { data: destination } = await supabase
+    .from("destinations")
+    .select("name")
+    .eq("id", site.destination_id)
+    .maybeSingle();
+  const photo = site.demo_data
+    ? null
+    : await searchDestinationPhoto(`${site.name}${destination ? ` ${destination.name}` : ""} diving`);
+  return buildPageMetadata({
+    title: site.name,
+    description: destination
+      ? `Dive site information for ${site.name} in ${destination.name} on DiveFinder.`
+      : `Dive site information for ${site.name} on DiveFinder.`,
+    imageUrl: photo?.url,
+  });
 }
 
 export default async function DiveSitePage({ params }: { params: { slug: string } }) {

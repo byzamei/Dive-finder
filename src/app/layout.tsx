@@ -8,14 +8,30 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+const defaultDescription =
+  "DiveFinder is an independent, explainable dive destination recommendation engine — not a booking marketplace.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: "DiveFinder — Where should you dive next?",
     template: "%s · DiveFinder",
   },
-  description:
-    "DiveFinder is an independent, explainable dive destination recommendation engine — not a booking marketplace.",
+  description: defaultDescription,
+  // Site-wide fallback so any page shares with a real preview card instead
+  // of a bare link — pages with their own real photo (destination, site,
+  // species) override this via buildPageMetadata() in src/lib/utils/metadata.ts.
+  openGraph: {
+    title: { default: "DiveFinder — Where should you dive next?", template: "%s · DiveFinder" },
+    description: defaultDescription,
+    siteName: "DiveFinder",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: { default: "DiveFinder — Where should you dive next?", template: "%s · DiveFinder" },
+    description: defaultDescription,
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

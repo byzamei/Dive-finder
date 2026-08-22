@@ -19,6 +19,7 @@ import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { DiveCentersSection, LiveaboardsSection } from "@/components/operators/OperatorsList";
 import { featureFlags } from "@/lib/utils/featureFlags";
 import { monthName } from "@/lib/utils/format";
+import { buildPageMetadata } from "@/lib/utils/metadata";
 import { Card, CardBody } from "@/components/ui/Card";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
 import type { MarineSpecies } from "@/lib/types/domain";
@@ -27,10 +28,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const supabase = await createClient();
   const destination = await getDestinationBySlug(supabase, params.slug);
   if (!destination) return {};
-  return {
+  const photo = destination.demo_data ? null : await searchDestinationPhoto(`${destination.name} scuba diving`);
+  return buildPageMetadata({
     title: destination.name,
     description: destination.summary ?? `Dive planning information for ${destination.name} on DiveFinder.`,
-  };
+    imageUrl: photo?.url,
+  });
 }
 
 export default async function DestinationPage({ params }: { params: { slug: string } }) {

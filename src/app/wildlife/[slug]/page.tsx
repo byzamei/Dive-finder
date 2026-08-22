@@ -13,13 +13,19 @@ import { SuitabilityBadge } from "@/components/badges/DataBadges";
 import { DemoDataBadge } from "@/components/badges/DataBadges";
 import { monthName } from "@/lib/utils/format";
 import { SpeciesSeenToggle } from "@/components/wildlife/SpeciesSeenToggle";
+import { buildPageMetadata } from "@/lib/utils/metadata";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = await createClient();
   const species = await getSpeciesBySlug(supabase, params.slug);
   if (!species) return {};
-  return { title: species.common_name, description: `Where to see ${species.common_name} (${species.scientific_name}).` };
+  const photo = await searchDestinationPhoto(`${species.common_name} underwater`);
+  return buildPageMetadata({
+    title: species.common_name,
+    description: `Where to see ${species.common_name} (${species.scientific_name}).`,
+    imageUrl: photo?.url,
+  });
 }
 
 export default async function SpeciesPage({ params }: { params: { slug: string } }) {
