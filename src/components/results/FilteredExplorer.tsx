@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { MarineSpecies, SearchCriteria } from "@/lib/types/domain";
 import { searchDestinations } from "@/lib/services/recommendationService";
+import { addFavorite, listFavorites, removeFavorite } from "@/lib/services/favoriteService";
 import {
   getCheapestPricePerDestination,
   type DestinationStartingPrice,
@@ -65,6 +67,9 @@ export function FilteredExplorer({
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [view, setView] = useState<"list" | "map">("list");
   const [photos, setPhotos] = useState<Map<string, CardPhoto>>(new Map());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
@@ -74,6 +79,14 @@ export function FilteredExplorer({
       .select("*")
       .order("common_name")
       .then(({ data }) => setSpecies((data ?? []) as MarineSpecies[]));
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      setUserId(user.id);
+      listFavorites(supabase, user.id).then((favorites) => {
+        setSavedIds(new Set(favorites.filter((f) => f.entity_type === "destination").map((f) => f.entity_id)));
+      });
+    });
 
     supabase
       .from("dive_sites")
@@ -138,6 +151,32 @@ export function FilteredExplorer({
     return current.includes(value)
       ? current.filter((v) => v !== value)
       : [...current, value];
+  }
+
+  async function toggleSaved(destinationId: string) {
+    if (!userId) {
+      router.push("/login?redirectTo=/results");
+      return;
+    }
+    const wasSaved = savedIds.has(destinationId);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(destinationId);
+      else next.add(destinationId);
+      return next;
+    });
+    const supabase = createClient();
+    try {
+      if (wasSaved) await removeFavorite(supabase, userId, "destination", destinationId);
+      else await addFavorite(supabase, userId, "destination", destinationId);
+    } catch {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(destinationId);
+        else next.delete(destinationId);
+        return next;
+      });
+    }
   }
 
   function toggleCompare(id: string) {
@@ -262,8 +301,29 @@ export function FilteredExplorer({
               return (
                 <div
                   key={d.id}
-                  className="overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card"
+                  className="relative overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card"
                 >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSaved(d.id);
+                    }}
+                    aria-label={savedIds.has(d.id) ? `Remove ${d.name} from saved` : `Save ${d.name}`}
+                    aria-pressed={savedIds.has(d.id)}
+                    className="focus-ring absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-abyss-600 shadow-sm hover:bg-white"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.75}
+                      className={
+                        savedIds.has(d.id) ? "h-4 w-4 fill-coral-500 stroke-coral-500" : "h-4 w-4 fill-none stroke-current"
+                      }
+                    >
+                      <path d="M12 20s-7-4.5-9.5-9A5 5 0 0112 6a5 5 0 019.5 5c-2.5 4.5-9.5 9-9.5 9z" />
+                    </svg>
+                  </button>
                   {photos.get(d.id) && (
                     <div className="relative h-28 w-full">
                       <Image
