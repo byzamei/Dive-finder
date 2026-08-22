@@ -23,6 +23,23 @@ export async function addFavorite(
   if (error) throw error;
 }
 
+export async function isFavorited(
+  supabase: SupabaseClient,
+  userId: string,
+  entityType: Favorite["entity_type"],
+  entityId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
 export async function removeFavorite(
   supabase: SupabaseClient,
   userId: string,

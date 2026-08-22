@@ -13,6 +13,8 @@ import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { featureFlags } from "@/lib/utils/featureFlags";
 import { buildPageMetadata } from "@/lib/utils/metadata";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
+import { isFavorited } from "@/lib/services/favoriteService";
+import { SaveButton } from "@/components/favorites/SaveButton";
 import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -54,7 +56,7 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
     .eq("id", site.destination_id)
     .maybeSingle();
 
-  const [claims, { data: siteSpecies }, reviews, userReview, { data: allSpecies }, photo] = await Promise.all([
+  const [claims, { data: siteSpecies }, reviews, userReview, { data: allSpecies }, photo, saved] = await Promise.all([
     getVerifiedClaims(supabase, "dive_site", site.id),
     supabase.from("site_species").select("marine_species(id, slug, common_name)").eq("site_id", site.id),
     listPublishedReviews(supabase, "site", site.id),
@@ -63,6 +65,7 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
     site.demo_data
       ? Promise.resolve(null)
       : searchDestinationPhoto(`${site.name}${destination ? ` ${destination.name}` : ""} diving`),
+    user ? isFavorited(supabase, user.id, "site", site.id) : Promise.resolve(false),
   ]);
 
   return (
@@ -87,7 +90,10 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
           ← {destination.name}
         </Link>
       )}
-      <h1 className="mt-2 font-display text-3xl text-abyss-900">{site.name}</h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="font-display text-3xl text-abyss-900">{site.name}</h1>
+        <SaveButton userId={user?.id ?? null} entityType="site" entityId={site.id} initialSaved={saved} />
+      </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Field label="Access" value={site.access_type ?? "Unknown"} />

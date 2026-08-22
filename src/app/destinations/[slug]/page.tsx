@@ -22,6 +22,8 @@ import { monthName } from "@/lib/utils/format";
 import { buildPageMetadata } from "@/lib/utils/metadata";
 import { Card, CardBody } from "@/components/ui/Card";
 import { searchDestinationPhoto } from "@/lib/services/photoService";
+import { isFavorited } from "@/lib/services/favoriteService";
+import { SaveButton } from "@/components/favorites/SaveButton";
 import type { MarineSpecies } from "@/lib/types/domain";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -41,13 +43,18 @@ export default async function DestinationPage({ params }: { params: { slug: stri
   const destination = await getDestinationBySlug(supabase, params.slug);
   if (!destination) notFound();
 
-  const [sites, species, claims, diveCenters, liveaboards, photo] = await Promise.all([
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [sites, species, claims, diveCenters, liveaboards, photo, saved] = await Promise.all([
     getDiveSitesForDestination(supabase, destination.id),
     getSpeciesForDestination(supabase, destination.id),
     getVerifiedClaims(supabase, "destination", destination.id),
     listDiveCentersForDestination(supabase, destination.id),
     listLiveaboardsForDestination(supabase, destination.id),
     destination.demo_data ? Promise.resolve(null) : searchDestinationPhoto(`${destination.name} scuba diving`),
+    user ? isFavorited(supabase, user.id, "destination", destination.id) : Promise.resolve(false),
   ]);
 
   const [diveCenterPrices, liveaboardPrices] = await Promise.all([
@@ -60,10 +67,6 @@ export default async function DestinationPage({ params }: { params: { slug: stri
     .select("*")
     .eq("destination_id", destination.id)
     .order("month");
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const [reviews, userReview, { data: allSpecies }] = await Promise.all([
     listPublishedReviews(supabase, "destination", destination.id),
@@ -88,9 +91,12 @@ export default async function DestinationPage({ params }: { params: { slug: stri
         </figure>
       )}
 
-      <div className="mb-4 flex items-center gap-2">
-        <h1 className="font-display text-3xl text-abyss-900">{destination.name}</h1>
-        {destination.demo_data && <DemoDataBadge />}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-3xl text-abyss-900">{destination.name}</h1>
+          {destination.demo_data && <DemoDataBadge />}
+        </div>
+        <SaveButton userId={user?.id ?? null} entityType="destination" entityId={destination.id} initialSaved={saved} />
       </div>
 
       <div className="flex flex-wrap gap-2">
