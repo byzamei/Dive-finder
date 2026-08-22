@@ -18,6 +18,7 @@ export function FollowButton({
   const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState(false);
 
   if (!viewerId) {
     return (
@@ -31,6 +32,7 @@ export function FollowButton({
 
   async function toggle() {
     setPending(true);
+    setError(false);
     const supabase = createClient();
     try {
       if (following) {
@@ -41,14 +43,19 @@ export function FollowButton({
         setFollowing(true);
       }
       router.refresh();
+    } catch {
+      setError(true);
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <Button size="sm" variant={following ? "outline" : "primary"} onClick={toggle} disabled={pending}>
-      {following ? "Following" : "Follow"}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button size="sm" variant={following ? "outline" : "primary"} onClick={toggle} disabled={pending}>
+        {following ? "Following" : "Follow"}
+      </Button>
+      {error && <span className="text-xs text-coral-600">Couldn&apos;t save — try again.</span>}
+    </div>
   );
 }
