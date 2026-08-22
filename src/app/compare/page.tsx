@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Destination, MarineSpecies } from "@/lib/types/domain";
 import { listPublishedDestinations } from "@/lib/services/destinationService";
@@ -139,12 +140,15 @@ function CompareInner() {
                 {rows.map((r) => (
                   <th key={r.destination.id} className="px-3 text-left">
                     {photos.get(r.destination.id) && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photos.get(r.destination.id)!.url}
-                        alt={photos.get(r.destination.id)!.alt}
-                        className="mb-2 h-20 w-full rounded-lg object-cover"
-                      />
+                      <div className="relative mb-2 h-20 w-full">
+                        <Image
+                          src={photos.get(r.destination.id)!.url}
+                          alt={photos.get(r.destination.id)!.alt}
+                          fill
+                          sizes="(max-width: 640px) 25vw, 150px"
+                          className="rounded-lg object-cover"
+                        />
+                      </div>
                     )}
                     <div className="flex items-center gap-1 font-display text-base text-abyss-900">
                       {r.destination.name}

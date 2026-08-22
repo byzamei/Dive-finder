@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -71,8 +72,9 @@ export default async function DestinationPage({ params }: { params: { slug: stri
     <main className="mx-auto max-w-4xl px-6 py-10">
       {photo && (
         <figure className="mb-6 overflow-hidden rounded-xl2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photo.url} alt={photo.alt} className="h-56 w-full object-cover sm:h-72" />
+          <div className="relative h-56 w-full sm:h-72">
+            <Image src={photo.url} alt={photo.alt} fill priority sizes="(max-width: 896px) 100vw, 896px" className="object-cover" />
+          </div>
           <figcaption className="mt-1.5 text-right text-xs text-abyss-400">
             Photo by{" "}
             <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-abyss-600">

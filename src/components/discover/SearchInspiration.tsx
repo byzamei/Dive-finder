@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getCheapestPricePerDestination, type DestinationStartingPrice } from "@/lib/services/operatorService";
@@ -143,8 +144,9 @@ function DestinationCard({
       className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
     >
       {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo.url} alt={photo.alt} className="h-32 w-full object-cover sm:h-36" />
+        <div className="relative h-32 w-full sm:h-36">
+          <Image src={photo.url} alt={photo.alt} fill sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
+        </div>
       ) : (
         <div className="flex h-32 items-center justify-center bg-gradient-to-br from-ocean-600 to-seaglass-500 text-white/90 sm:h-36">
           <Icon className="h-11 w-11" />
@@ -174,8 +176,9 @@ function SiteCard({
       className="focus-ring block overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card transition-transform hover:-translate-y-0.5"
     >
       {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo.url} alt={photo.alt} className="h-32 w-full object-cover sm:h-36" />
+        <div className="relative h-32 w-full sm:h-36">
+          <Image src={photo.url} alt={photo.alt} fill sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
+        </div>
       ) : (
         <div className="flex h-32 items-center justify-center bg-gradient-to-br from-seaglass-500 to-ocean-700 text-white/90 sm:h-36">
           <Icon className="h-11 w-11" />

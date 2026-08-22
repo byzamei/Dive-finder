@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Destination } from "@/lib/types/domain";
@@ -252,8 +253,9 @@ function DestinationCard({
   return (
     <Card>
       {photo && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo.url} alt={photo.alt} className="h-32 w-full rounded-t-xl2 object-cover" />
+        <div className="relative h-32 w-full">
+          <Image src={photo.url} alt={photo.alt} fill sizes="(max-width: 640px) 100vw, 420px" className="rounded-t-xl2 object-cover" />
+        </div>
       )}
       <CardBody>
         <Link href={`/destinations/${d.slug}`} className="focus-ring block">

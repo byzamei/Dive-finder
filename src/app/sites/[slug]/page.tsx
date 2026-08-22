@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getDiveSiteBySlug, getVerifiedClaims } from "@/lib/services/destinationService";
@@ -53,8 +54,9 @@ export default async function DiveSitePage({ params }: { params: { slug: string 
     <main className="mx-auto max-w-3xl px-6 py-10">
       {photo && (
         <figure className="mb-6 overflow-hidden rounded-xl2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photo.url} alt={photo.alt} className="h-48 w-full object-cover sm:h-60" />
+          <div className="relative h-48 w-full sm:h-60">
+            <Image src={photo.url} alt={photo.alt} fill priority sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
+          </div>
           <figcaption className="mt-1.5 text-right text-xs text-abyss-400">
             Photo by{" "}
             <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-abyss-600">

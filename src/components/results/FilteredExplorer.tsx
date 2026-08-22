@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { MarineSpecies, SearchCriteria } from "@/lib/types/domain";
@@ -264,12 +265,15 @@ export function FilteredExplorer({
                   className="overflow-hidden rounded-xl2 border border-abyss-100 bg-white shadow-card"
                 >
                   {photos.get(d.id) && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photos.get(d.id)!.url}
-                      alt={photos.get(d.id)!.alt}
-                      className="h-28 w-full object-cover"
-                    />
+                    <div className="relative h-28 w-full">
+                      <Image
+                        src={photos.get(d.id)!.url}
+                        alt={photos.get(d.id)!.alt}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 420px"
+                        className="object-cover"
+                      />
+                    </div>
                   )}
                   <div className="p-4">
                     <Link

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listPublishedDestinations, listPublishedSitesPage } from "@/lib/services/destinationService";
@@ -72,12 +73,15 @@ export default async function SitesPage({
             <Link key={site.id} href={`/sites/${site.slug}`} className="focus-ring block">
               <Card>
                 {photoById.get(site.id) && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={photoById.get(site.id)!.url}
-                    alt={photoById.get(site.id)!.alt}
-                    className="h-32 w-full rounded-t-xl2 object-cover"
-                  />
+                  <div className="relative h-32 w-full">
+                    <Image
+                      src={photoById.get(site.id)!.url}
+                      alt={photoById.get(site.id)!.alt}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 420px"
+                      className="rounded-t-xl2 object-cover"
+                    />
+                  </div>
                 )}
                 <CardBody>
                   <p className="font-display text-lg text-abyss-900">{site.name}</p>

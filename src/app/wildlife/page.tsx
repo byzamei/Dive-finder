@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listSpecies } from "@/lib/services/wildlifeService";
@@ -123,10 +124,11 @@ export default async function WildlifePage({
               <CardBody>
                 <div className="flex items-center gap-3.5">
                   {photoById.get(s.id) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={photoById.get(s.id)!.url}
                       alt={photoById.get(s.id)!.alt}
+                      width={56}
+                      height={56}
                       className="h-14 w-14 shrink-0 rounded-full object-cover"
                     />
                   ) : (
